@@ -6,4 +6,4 @@
 #include "scoring.h"
 #include "scoringMacro.h"
 
-extern void AutonRoute();
+extern void AutonComp();
