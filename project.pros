@@ -631,6 +631,38 @@
                 "target": "v5",
                 "user_files": [],
                 "version": "9.2.0"
+            },
+            "libmvlib": {
+                "location": "/Users/David/Library/Application Support/PROS/templates/libmvlib@3.0.1-alpha.1",
+                "metadata": {
+                    "origin": "local"
+                },
+                "name": "libmvlib",
+                "py/object": "pros.conductor.templates.local_template.LocalTemplate",
+                "supported_kernels": ">=4.2.1,<5.0.0",
+                "system_files": [
+                    "include/mvlib/private/getOdomProvider.hpp",
+                    "include/mvlib/watches.hpp",
+                    "firmware/libmvlib.a",
+                    "include/mvlib/private/terminalOut.hpp",
+                    "include/mvlib/renderHelper.hpp",
+                    "include/mvlib/private/misc.hpp",
+                    "include/mvlib/Optional/okapi.hpp",
+                    "include/mvlib/api.hpp",
+                    "include/mvlib/private/sdCsv.hpp",
+                    "include/mvlib/Optional/ezTemplate.hpp",
+                    "include/mvlib/core.hpp",
+                    "include/mvlib/private/raii.hpp",
+                    "include/mvlib/Optional/customOdom.hpp",
+                    "include/mvlib/private/sdSink.hpp",
+                    "include/mvlib/waypoint.hpp",
+                    "include/mvlib/types.hpp",
+                    "include/mvlib/literals.hpp",
+                    "include/mvlib/Optional/lemlib.hpp"
+                ],
+                "target": "v5",
+                "user_files": [],
+                "version": "3.0.1-alpha.1"
             }
         },
         "upload_options": {},
