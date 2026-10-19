@@ -1,3 +1,6 @@
+
+#pragma once
+
 #include "main.h"
 #include "lift.h"
 #include "intake.h"
@@ -6,4 +9,4 @@
 #include "scoring.h"
 #include "scoringMacro.h"
 
-extern void AutonCompv1();
+void AutonCompV1();

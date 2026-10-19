@@ -1,13 +1,82 @@
+
 #include "main.h"
 #include "robotConfigs.h"
-#include "opcontrol.h"
+#include "opControl.h"
 #include "lift.h"
 #include "intake.h"
 #include "scoring.h"
+#include "scoringMacro.h"
+#include "autonomous.hpp"
 
+#include <atomic>
 
-// Driver Profile Selector
+// Tracks the practice autonomous
+std::atomic<bool> practiceAutonRunning(false);
+pros::Task* practiceAutonTask = nullptr;
 
+bool practiceCancelHeld = false;
+
+// Stops the robot's motors
+void stopPracticeAutonMotors() {
+    chassis.cancelAllMotions();
+
+    left_motor_group.move(0);
+    right_motor_group.move(0);
+
+    cancelMatchLoad();
+    cancelScoringAuto();
+
+    liftStop();
+    scoringMechStop();
+    scoringWheelsStop();
+    intakeStop();
+}
+
+// Starts autonomous for practice
+void startPracticeAuton() {
+    if (practiceAutonRunning.load()) {
+        return;
+    }
+
+    if (practiceAutonTask != nullptr) {
+        practiceAutonTask->remove();
+        delete practiceAutonTask;
+        practiceAutonTask = nullptr;
+    }
+
+    stopPracticeAutonMotors();
+
+    practiceAutonRunning.store(true);
+
+    practiceAutonTask = new pros::Task([]() {
+        autonomous();
+
+        stopPracticeAutonMotors();
+        practiceAutonRunning.store(false);
+    });
+
+    controller.rumble(".");
+}
+
+// Cancels practice autonomous
+void cancelPracticeAuton() {
+    if (!practiceAutonRunning.load()) {
+        return;
+    }
+
+    if (practiceAutonTask != nullptr) {
+        practiceAutonTask->remove();
+        delete practiceAutonTask;
+        practiceAutonTask = nullptr;
+    }
+
+    stopPracticeAutonMotors();
+
+    practiceAutonRunning.store(false);
+    controller.rumble("..");
+}
+
+// Displays the robot's position
 void updateScreenTask() {
     while (true) {
         pros::lcd::print(0, "X: %f", chassis.getPose().x);
@@ -17,11 +86,10 @@ void updateScreenTask() {
     }
 }
 
+// Lets the driver select a mode
 void selectDriverMode() {
     pros::screen::erase();
     pros::screen::print(pros::E_TEXT_MEDIUM, 20, 30, "DRIVER MODE");
-
-    // Draw Competition, Skills, and Practice buttons
 
     // Competition button
     pros::screen::fill_rect(40, 50, 440, 100);
@@ -64,78 +132,104 @@ void selectDriverMode() {
     pros::screen::erase();
 
     if (driverMode == COMPETITION) {
-        pros::screen::print(pros::E_TEXT_MEDIUM, 20, 30, "COMPETITION SELECTED");
+        pros::screen::print(
+            pros::E_TEXT_MEDIUM, 20, 30,
+            "COMPETITION SELECTED"
+        );
     } else if (driverMode == SKILLS) {
-        pros::screen::print(pros::E_TEXT_MEDIUM, 20, 30, "SKILLS SELECTED");
+        pros::screen::print(
+            pros::E_TEXT_MEDIUM, 20, 30,
+            "SKILLS SELECTED"
+        );
     } else {
-        pros::screen::print(pros::E_TEXT_MEDIUM, 20, 30, "PRACTICE SELECTED");
+        pros::screen::print(
+            pros::E_TEXT_MEDIUM, 20, 30,
+            "PRACTICE SELECTED"
+        );
     }
 
     pros::delay(1000);
 }
 
-/**
- * Runs initialization code. This occurs as soon as the program is started.
- *
- * All other competition modes are blocked by initialize; it is recommended
- * to keep execution time for this mode under a few seconds.
- */
+// Sets up the robot when the program starts
 void initialize() {
-    pros::lcd::initialize(); // initialize the LCD screen
+    pros::lcd::initialize();
 
-    chassis.calibrate(); //calibrates the IMU and sets the initial position to 0,0,0
+    chassis.calibrate();
 
-    selectDriverMode(); // allows the user to select the driver mode (competition, skills, or practice)
-    liftSetup(); // sets the lift motors to hold position when stopped
-    intakeSetup(); // sets the intake motors to hold position when stopped
-    scoringSetup(); // sets the scoring mechanism motor to hold position when stopped
+    // The lift starts at zero
+    // The scoring mechanism starts fully folded
+    liftSetup();
+    intakeSetup();
+    scoringSetup();
+
+    selectDriverMode();
+
     pros::Task screen_task(updateScreenTask);
 }
 
-/**
- * Runs while the robot is in the disabled state of Field Management System or
- * the VEX Competition Switch, following either autonomous or opcontrol. When
- * the robot is enabled, this task will exit.
- */
-void disabled() {}
-
-/**
- * Runs after initialize(), and before autonomous when connected to the Field
- * Management System or the VEX Competition Switch. This is intended for
- * competition-specific initialization routines, such as an autonomous selector
- * on the LCD.
- *
- * This task will exit when the robot is enabled and autonomous or opcontrol
- * starts.
- */
-void competition_initialize() {}
-
-/**
- * Runs the user autonomous code. This function will be started in its own task
- * with the default priority and stack size whenever the robot is enabled via
- * the Field Management System or the VEX Competition Switch in the autonomous
- * mode. Alternatively, this function may be called in initialize or opcontrol
- * for non-competition testing purposes.
- *
- * If the robot is disabled or communications is lost, the autonomous task
- * will be stopped. Re-enabling the robot will restart the task, not re-start it
- * from where it left off.
- */
-void autonomous() {
-    // set position to x:0, y:0, heading:0
-    chassis.setPose(0, 0, 0);
-    // turn to face heading 10 with a very long timeout
-    chassis.turnToHeading(90, 100000);
-
-    pros::delay(500); //Settle down time for bot
-
-    printf("Final Heading: %.2f\n", chassis.getPose().theta); //Prints final heading to console
+// Runs when the robot is disabled
+void disabled() {
+    if (practiceAutonRunning.load()) {
+        cancelPracticeAuton();
+    }
 }
 
-void opcontrol() {
-	//Continous loop for driver to control motors
-	while (true) {
+// Runs before competition autonomous
+void competition_initialize() {
 
+}
+
+// Runs the competition autonomous
+void autonomous() {
+    // Starting position from MotionView
+    chassis.setPose(65.216, -0.168, 89.535);
+
+    AutonCompV1();
+}
+
+// Runs driver controls
+void opcontrol() {
+    while (true) {
+
+        // Practice mode autonomous controls
+        if (driverMode == PRACTICE) {
+            bool yPressed = controller.get_digital_new_press(
+                pros::E_CONTROLLER_DIGITAL_Y
+            );
+
+            bool xHeld = controller.get_digital(
+                pros::E_CONTROLLER_DIGITAL_X
+            );
+
+            bool upHeld = controller.get_digital(
+                pros::E_CONTROLLER_DIGITAL_UP
+            );
+
+            bool cancelPressed = xHeld && upHeld;
+
+            // X and Up cancels autonomous
+            if (cancelPressed && !practiceCancelHeld) {
+                cancelPracticeAuton();
+            }
+
+            // Y starts autonomous with one press
+            if (yPressed &&
+                !cancelPressed &&
+                !practiceAutonRunning.load()) {
+                startPracticeAuton();
+            }
+
+            practiceCancelHeld = cancelPressed;
+
+            // Stop normal driver controls while autonomous runs
+            if (practiceAutonRunning.load()) {
+                pros::delay(10);
+                continue;
+            }
+        }
+
+        // Run the selected driver controls
         if (driverMode == COMPETITION) {
             competitionDriver();
         }
@@ -146,6 +240,6 @@ void opcontrol() {
             practiceDriver();
         }
 
-        pros::delay(10);     
-	}
+        pros::delay(10);
+    }
 }

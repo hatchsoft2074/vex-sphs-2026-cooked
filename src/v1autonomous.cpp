@@ -1,8 +1,8 @@
 
 #include "autonomous.hpp"
+#include <cmath>
 
-// Pin 1 & 2 Score Heights and Pickup Heights
-
+// Cascade positions
 const double PIN1_SCORE_HEIGHT = 2500;
 
 const double PINCONE1_PICKUP_HEIGHT = 1360;
@@ -13,19 +13,18 @@ const double PINCONE2_SCORE_HEIGHT = 2500;
 
 const double FINAL_CASCADE_HEIGHT = 1360;
 
-// Claw Angle
-
+// Scoring mechanism positions
 const double PIN1_CLAW_ANGLE = 890;
 const double PINCONE1_CLAW_ANGLE = 890;
 const double PINCONE2_CLAW_ANGLE = 890;
 
 const double FINAL_CLAW_ANGLE = 0;
 
-// Timings 
-
+// Toggle timings
 const int TOGGLE_FORWARD_TIME = 500;
 const int TOGGLE_BACKWARD_TIME = 500;
 
+// Scoring wheel timings
 const int PIN1_SCORE_TIME = 500;
 
 const int PINCONE1_PICKUP_TIME = 750;
@@ -34,16 +33,14 @@ const int PINCONE1_SCORE_TIME = 500;
 const int PINCONE2_PICKUP_TIME = 750;
 const int PINCONE2_SCORE_TIME = 500;
 
-// Non-Explode Code
-
+// Mechanism settings
 const int LIFT_TIMEOUT = 3000;
-const int CLAW_TIMEOUT = 1500;
+const int CLAW_TIMEOUT = 2000;
 
 const double LIFT_TOLERANCE = 30;
 const double CLAW_TOLERANCE = 20;
 
-// Super Move
-
+// Drive to a point using LemLib
 void autonMove(double x, double y, bool forwards) {
     chassis.moveToPoint(
         x, y, 4000,
@@ -53,30 +50,31 @@ void autonMove(double x, double y, bool forwards) {
     chassis.waitUntilDone();
 }
 
+// Turn to a heading using LemLib
 void autonTurn(double heading) {
     chassis.turnToHeading(heading, 1000);
     chassis.waitUntilDone();
 }
 
-// Cascade Twerker 
-
+// Move the lift to an encoder position
 bool autonLiftTo(double target) {
-
-    // Do not lower below normal intake position
-    if (target < 1360) {
-        target = 1360;
+    // Normal autonomous movements stay above intake height.
+    // The lift can still start at zero.
+    if (target < getNormalLiftPosition()) {
+        target = getNormalLiftPosition();
     }
+
+    if (target > getMaxLiftPosition()) {
+        target = getMaxLiftPosition();
+    }
+
+    cancelMatchLoad();
 
     unsigned int start = pros::millis();
 
-    moveLiftToPosition(target);
-
     while (pros::millis() - start < LIFT_TIMEOUT) {
-
-        double error = target - getLiftPosition();
-
-        if (error >= -LIFT_TOLERANCE &&
-            error <= LIFT_TOLERANCE) {
+        // This must run repeatedly to update motor speed.
+        if (moveLiftToPosition(target)) {
             liftStop();
             return true;
         }
@@ -88,18 +86,24 @@ bool autonLiftTo(double target) {
     return false;
 }
 
-// Scoring Twerker
-
+// Move the scoring mechanism to an encoder position
 bool autonClawTo(double target) {
+    if (target < 0) {
+        target = 0;
+    }
+
+    if (target > 920) {
+        target = 920;
+    }
+
+    cancelScoringAuto();
 
     unsigned int start = pros::millis();
 
     while (pros::millis() - start < CLAW_TIMEOUT) {
-
         double error = target - getScoringMechPosition();
 
-        if (error >= -CLAW_TOLERANCE &&
-            error <= CLAW_TOLERANCE) {
+        if (std::abs(error) <= CLAW_TOLERANCE) {
             scoringMechStop();
             return true;
         }
@@ -117,10 +121,8 @@ bool autonClawTo(double target) {
     return false;
 }
 
-// Toggle Stuff
-
+// Move forward and backward to flip the toggle
 void autonToggle() {
-
     left_motor_group.move(80);
     right_motor_group.move(80);
 
@@ -135,60 +137,46 @@ void autonToggle() {
     right_motor_group.move(0);
 }
 
-// Scoring 1
-
-bool autonScore(
-    double cascadeHeight,
-    double clawAngle,
-    int scoreTime
-) {
-
-    if (!autonLiftTo(cascadeHeight)) {
+// Score a pin or pin and cone
+bool autonScore(double height, double angle, int time) {
+    if (!autonLiftTo(height)) {
         return false;
     }
 
-    if (!autonClawTo(clawAngle)) {
+    if (!autonClawTo(angle)) {
         return false;
     }
 
-    scoringWheelMotor(-45);
-    pros::delay(scoreTime);
-    scoringWheelMotor(0);
+    // Your original scoring code used negative motor power.
+    scoringWheelsAccept();
+    pros::delay(time);
+    scoringWheelsStop();
 
     return true;
 }
 
-// Pickup 1
-
-bool autonPickup(
-    double cascadeHeight,
-    int pickupTime
-) {
-
-    if (!autonLiftTo(cascadeHeight)) {
+// Pick up a pin and cone
+bool autonPickup(double height, int time) {
+    if (!autonLiftTo(height)) {
         return false;
     }
 
-    scoringWheelMotor(45);
-    pros::delay(pickupTime);
-    scoringWheelMotor(0);
+    // Your original pickup code used positive motor power.
+    scoringWheelsReject();
+    pros::delay(time);
+    scoringWheelsStop();
 
     return true;
 }
 
-// Tuff Auton V1
-
+// Competition autonomous
 void AutonCompV1() {
 
-    // Auton Toggling 
-
+    // Flip the toggle twice
     autonToggle();
     autonToggle();
 
-    // SCORE PIN 1
-    // Pin starts inside the robot
-   
-
+    // Score the first pin already inside the robot
     autonMove(51.433, 18.406, false);
     autonTurn(139.979);
 
@@ -203,8 +191,7 @@ void AutonCompV1() {
         goto autonEnd;
     }
 
-    // Picking Up Set 1
-
+    // Pick up the first pin and cone
     autonMove(28.825, 23.483, false);
     autonTurn(90.331);
 
@@ -218,8 +205,7 @@ void AutonCompV1() {
         goto autonEnd;
     }
 
-    // Scoring Set 1
-
+    // Score the first pin and cone
     autonMove(35.858, 27.811, true);
     autonTurn(325.008);
 
@@ -231,8 +217,7 @@ void AutonCompV1() {
         goto autonEnd;
     }
 
-    // Picking up Set 2
-
+    // Pick up the second pin and cone
     autonMove(46.979, 40.954, true);
     autonTurn(178.668);
 
@@ -246,8 +231,7 @@ void AutonCompV1() {
         goto autonEnd;
     }
 
-    // Scoring Set 2
-
+    // Score the second pin and cone
     autonMove(57.56, 57.747, true);
     autonTurn(91.284);
 
@@ -259,20 +243,18 @@ void AutonCompV1() {
         goto autonEnd;
     }
 
-    // Final 
-
+    // Move to the final position
     autonMove(62.082, 57.879, true);
     autonTurn(90);
 
 autonEnd:
-
-    scoringWheelMotor(0);
+    scoringWheelsStop();
     intakeStop();
 
-    // Fold scoring mechanism
+    // Fold the scoring mechanism
     autonClawTo(FINAL_CLAW_ANGLE);
 
-    // Lower cascade to intake height
+    // Return the lift to intake position
     autonLiftTo(FINAL_CASCADE_HEIGHT);
 
     scoringMechStop();
