@@ -6,5 +6,4 @@
 #include "scoring.h"
 #include "scoringMacro.h"
 
-extern void AutonComp();
 extern void AutonCompv1();
