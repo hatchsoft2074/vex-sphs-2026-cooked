@@ -9,4 +9,5 @@
 #include "scoring.h"
 #include "scoringMacro.h"
 
-void AutonCompV1();
+void AutonCompRight();
+void AutonCompLeft();

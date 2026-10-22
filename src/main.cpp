@@ -191,10 +191,14 @@ void competition_initialize() {
 
 // Runs the competition autonomous
 void autonomous() {
-    // Starting position from MotionView
-    chassis.setPose(65.216, -0.168, 89.535);
-
-    AutonCompV1();
+    if (/* left auton */) {
+        chassis.setPose(0, 62.75, 0);
+        AutonCompLeft();
+    }
+    else (/* right auton */) {
+        chassis.setPose(62.824, 0.043, 90);
+        AutonCompRight();
+    }
 }
 
 // Runs driver controls
