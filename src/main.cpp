@@ -189,16 +189,12 @@ void competition_initialize() {
 
 }
 
+// Change this to choose which autonomous runs
+bool useLeftAuton = true;
+
 // Runs the competition autonomous
 void autonomous() {
-    if (/* left auton */) {
-        chassis.setPose(0, 62.75, 0);
-        AutonCompLeft();
-    }
-    else (/* right auton */) {
-        chassis.setPose(62.824, 0.043, 90);
-        AutonCompRight();
-    }
+    selector.run_auton();
 }
 
 // Runs driver controls
