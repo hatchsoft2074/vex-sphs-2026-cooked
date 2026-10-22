@@ -10,6 +10,15 @@
 
 #include <atomic>
 
+//Selectors 
+rd::Selector selector({
+    {"Left Auton", AutonCompLeft},
+    {"Right Auton", AutonCompRight},
+    {"Competition", competitionDriver},
+    {"Skills", skillsDriver},
+    {"Practice", practiceDriver}
+});
+
 // Tracks the practice autonomous
 std::atomic<bool> practiceAutonRunning(false);
 pros::Task* practiceAutonTask = nullptr;
