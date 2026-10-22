@@ -129,3 +129,46 @@ double getScoringMechPosition() {
 void resetScoringMechPosition() {
     scoringMech.tare_position();
 }
+
+// Move scoring mechanism to the 90 degree position
+void scoringTo90() {
+    cancelScoringAuto();
+
+    unsigned int start = pros::millis();
+
+    while (pros::millis() - start < 2000) {
+        if (getScoringMechPosition() >= scoring90Position - scoringAutoTolerance) {
+            break;
+        }
+
+        scoringMechUp();
+        pros::delay(20);
+    }
+
+    scoringMechStop();
+}
+
+// Fold scoring mechanism back to its starting position
+void scoringFold() {
+    cancelScoringAuto();
+
+    unsigned int start = pros::millis();
+
+    while (pros::millis() - start < 2000) {
+        if (getScoringMechPosition() <= scoringFoldedPosition + scoringAutoTolerance) {
+            break;
+        }
+
+        scoringMechDown();
+        pros::delay(20);
+    }
+
+    scoringMechStop();
+}
+
+// Run scoring wheels in reject direction for a set time
+void scoringRejectFor(int milliseconds) {
+    scoringWheelsReject();
+    pros::delay(milliseconds);
+    scoringWheelsStop();
+}

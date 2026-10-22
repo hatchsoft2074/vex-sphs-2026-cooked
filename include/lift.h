@@ -13,6 +13,7 @@ double getMatchLoadPosition();
 double getMaxLiftPosition();
 
 bool moveLiftToPosition(double targetPosition);
+void liftToPosition(double targetPosition);
 
 void toggleMatchLoad();
 void updateMatchLoad();

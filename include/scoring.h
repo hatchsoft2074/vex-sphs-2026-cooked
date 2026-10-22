@@ -25,3 +25,8 @@ bool isScoringAutoRunning();
 double getScoringMechPosition();
 
 void resetScoringMechPosition();
+
+// Autonomous scoring functions
+void scoringTo90();
+void scoringFold();
+void scoringRejectFor(int milliseconds);

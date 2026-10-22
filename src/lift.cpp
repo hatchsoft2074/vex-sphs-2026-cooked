@@ -1,4 +1,3 @@
-
 #include "lift.h"
 #include "main.h"
 
@@ -125,6 +124,21 @@ bool moveLiftToPosition(double targetPosition) {
 
     liftStop();
     return true;
+}
+
+// Move lift to a position and wait until finished
+void liftToPosition(double targetPosition) {
+    unsigned int start = pros::millis();
+
+    while (pros::millis() - start < 3000) {
+        if (moveLiftToPosition(targetPosition)) {
+            break;
+        }
+
+        pros::delay(20);
+    }
+
+    liftStop();
 }
 
 void toggleMatchLoad() {
