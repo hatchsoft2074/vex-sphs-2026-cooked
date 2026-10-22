@@ -9,26 +9,27 @@
 #include "autonomous.hpp"
 
 #include <atomic>
+#include <cstdio>
+#include <string>
 
-//Selectors 
+// RoboDash only selects autonomous routines.
 rd::Selector selector({
     {"Left Auton", AutonCompLeft},
-    {"Right Auton", AutonCompRight},
-    {"Competition", competitionDriver},
-    {"Skills", skillsDriver},
-    {"Practice", practiceDriver}
+    {"Right Auton", AutonCompRight}
 });
 
-// Tracks the practice autonomous
+// Use RoboDash for the odometry screen too.
+rd::Console odomScreen("Odometry");
+
 std::atomic<bool> practiceAutonRunning(false);
 pros::Task* practiceAutonTask = nullptr;
-
 bool practiceCancelHeld = false;
+bool autonConfirmed = false;
+std::string selectedAutonName = "Left Auton";
 
-// Stops the robot's motors
+// Stops motion and motors used by the autonomous routines.
 void stopPracticeAutonMotors() {
     chassis.cancelAllMotions();
-
     left_motor_group.move(0);
     right_motor_group.move(0);
 
@@ -41,25 +42,24 @@ void stopPracticeAutonMotors() {
     intakeStop();
 }
 
-// Starts autonomous for practice
-void startPracticeAuton() {
-    if (practiceAutonRunning.load()) {
-        return;
-    }
-
-    if (practiceAutonTask != nullptr) {
+// Clean up an old practice task after it finishes.
+void clearFinishedPracticeTask() {
+    if (practiceAutonTask != nullptr && !practiceAutonRunning.load()) {
         practiceAutonTask->remove();
         delete practiceAutonTask;
         practiceAutonTask = nullptr;
     }
+}
 
+void startPracticeAuton() {
+    if (practiceAutonRunning.load() || !autonConfirmed) return;
+
+    clearFinishedPracticeTask();
     stopPracticeAutonMotors();
-
     practiceAutonRunning.store(true);
 
     practiceAutonTask = new pros::Task([]() {
         autonomous();
-
         stopPracticeAutonMotors();
         practiceAutonRunning.store(false);
     });
@@ -67,12 +67,10 @@ void startPracticeAuton() {
     controller.rumble(".");
 }
 
-// Cancels practice autonomous
 void cancelPracticeAuton() {
-    if (!practiceAutonRunning.load()) {
-        return;
-    }
+    if (!practiceAutonRunning.load()) return;
 
+    // Remove the running task before stopping the motors.
     if (practiceAutonTask != nullptr) {
         practiceAutonTask->remove();
         delete practiceAutonTask;
@@ -80,172 +78,167 @@ void cancelPracticeAuton() {
     }
 
     stopPracticeAutonMotors();
-
     practiceAutonRunning.store(false);
     controller.rumble("..");
 }
 
-// Displays the robot's position
+// The odometry screen stays visible after selection.
 void updateScreenTask() {
     while (true) {
-        pros::lcd::print(0, "X: %f", chassis.getPose().x);
-        pros::lcd::print(1, "Y: %f", chassis.getPose().y);
-        pros::lcd::print(2, "Theta: %f", chassis.getPose().theta);
-        pros::delay(50);
+        if (autonConfirmed || driverMode == SKILLS) {
+            auto pose = chassis.getPose();
+            char line[96];
+            odomScreen.clear();
+            std::snprintf(line, sizeof(line), "X: %.2f", pose.x);
+            odomScreen.println(line);
+            std::snprintf(line, sizeof(line), "Y: %.2f", pose.y);
+            odomScreen.println(line);
+            std::snprintf(line, sizeof(line), "Theta: %.2f", pose.theta);
+            odomScreen.println(line);
+            odomScreen.println(driverMode == COMPETITION ? "Mode: Competition" :
+                               driverMode == SKILLS ? "Mode: Skills" : "Mode: Practice");
+            if (driverMode != SKILLS) {
+                odomScreen.println("Auton: " + selectedAutonName);
+            }
+            pros::delay(250);
+        } else {
+            pros::delay(50);
+        }
     }
 }
 
-// Lets the driver select a mode
+// Wait for a fresh screen touch, not the previous button press.
+void waitForTouchRelease() {
+    while (true) {
+        auto touch = pros::screen::touch_status();
+        if (touch.touch_status != pros::E_TOUCH_PRESSED &&
+            touch.touch_status != pros::E_TOUCH_HELD) break;
+        pros::delay(20);
+    }
+}
+
 void selectDriverMode() {
     pros::screen::erase();
-    pros::screen::print(pros::E_TEXT_MEDIUM, 20, 30, "DRIVER MODE");
+    pros::screen::print(pros::E_TEXT_MEDIUM, 20, 20, "DRIVER MODE");
 
-    // Competition button
     pros::screen::fill_rect(40, 50, 440, 100);
     pros::screen::print(pros::E_TEXT_MEDIUM, 150, 65, "COMPETITION");
 
-    // Skills button
     pros::screen::fill_rect(40, 115, 440, 165);
     pros::screen::print(pros::E_TEXT_MEDIUM, 190, 130, "SKILLS");
 
-    // Practice button
     pros::screen::fill_rect(40, 180, 440, 230);
     pros::screen::print(pros::E_TEXT_MEDIUM, 185, 195, "PRACTICE");
 
+    waitForTouchRelease();
     while (true) {
-        auto status = pros::screen::touch_status();
-
-        if (status.touch_status == pros::E_TOUCH_PRESSED) {
-            if (status.x >= 40 && status.x <= 440 &&
-                status.y >= 50 && status.y <= 100) {
+        auto touch = pros::screen::touch_status();
+        if (touch.touch_status == pros::E_TOUCH_PRESSED &&
+            touch.x >= 40 && touch.x <= 440) {
+            if (touch.y >= 50 && touch.y <= 100) {
                 driverMode = COMPETITION;
                 break;
             }
-
-            if (status.x >= 40 && status.x <= 440 &&
-                status.y >= 115 && status.y <= 165) {
+            if (touch.y >= 115 && touch.y <= 165) {
                 driverMode = SKILLS;
                 break;
             }
-
-            if (status.x >= 40 && status.x <= 440 &&
-                status.y >= 180 && status.y <= 230) {
+            if (touch.y >= 180 && touch.y <= 230) {
                 driverMode = PRACTICE;
                 break;
             }
         }
+        pros::delay(20);
+    }
+}
 
+// RoboDash handles Left/Right. A on the controller confirms it.
+void selectAutonomous() {
+    selector.focus();
+
+    // Do not accept an A press held from before selection.
+    while (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
         pros::delay(20);
     }
 
-    pros::screen::erase();
-
-    if (driverMode == COMPETITION) {
-        pros::screen::print(
-            pros::E_TEXT_MEDIUM, 20, 30,
-            "COMPETITION SELECTED"
-        );
-    } else if (driverMode == SKILLS) {
-        pros::screen::print(
-            pros::E_TEXT_MEDIUM, 20, 30,
-            "SKILLS SELECTED"
-        );
-    } else {
-        pros::screen::print(
-            pros::E_TEXT_MEDIUM, 20, 30,
-            "PRACTICE SELECTED"
-        );
+    while (true) {
+        auto chosen = selector.get_auton();
+        if (chosen.has_value() &&
+            controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A)) {
+            selectedAutonName = chosen->name;
+            autonConfirmed = true;
+            controller.rumble(".");
+            break;
+        }
+        pros::delay(20);
     }
-
-    pros::delay(1000);
 }
 
-// Sets up the robot when the program starts
 void initialize() {
-    pros::lcd::initialize();
-
+    // Do not initialize pros::lcd because RoboDash owns the display.
     chassis.calibrate();
-
-    // The lift starts at zero
-    // The scoring mechanism starts fully folded
     liftSetup();
     intakeSetup();
     scoringSetup();
 
     selectDriverMode();
 
+    if (driverMode == COMPETITION || driverMode == PRACTICE) {
+        selectAutonomous();
+    }
+
+    odomScreen.focus();
     pros::Task screen_task(updateScreenTask);
 }
 
-// Runs when the robot is disabled
 void disabled() {
-    if (practiceAutonRunning.load()) {
-        cancelPracticeAuton();
-    }
+    if (practiceAutonRunning.load()) cancelPracticeAuton();
 }
 
-// Runs before competition autonomous
 void competition_initialize() {
-
+    // Autonomous is already selected before the match.
 }
 
-// Change this to choose which autonomous runs
-bool useLeftAuton = true;
-
-// Runs the competition autonomous
 void autonomous() {
+    // Only Left and Right autonomous routines are in this selector.
     selector.run_auton();
 }
 
-// Runs driver controls
 void opcontrol() {
     while (true) {
-
-        // Practice mode autonomous controls
         if (driverMode == PRACTICE) {
             bool yPressed = controller.get_digital_new_press(
-                pros::E_CONTROLLER_DIGITAL_Y
-            );
+                pros::E_CONTROLLER_DIGITAL_Y);
+            bool rightHeld = controller.get_digital(
+                pros::E_CONTROLLER_DIGITAL_RIGHT);
 
-            bool xHeld = controller.get_digital(
-                pros::E_CONTROLLER_DIGITAL_X
-            );
-
-            bool upHeld = controller.get_digital(
-                pros::E_CONTROLLER_DIGITAL_UP
-            );
-
-            bool cancelPressed = xHeld && upHeld;
-
-            // X and Up cancels autonomous
-            if (cancelPressed && !practiceCancelHeld) {
+            // Right arrow cancels a running practice autonomous.
+            if (rightHeld && !practiceCancelHeld &&
+                practiceAutonRunning.load()) {
                 cancelPracticeAuton();
             }
+            practiceCancelHeld = rightHeld;
 
-            // Y starts autonomous with one press
-            if (yPressed &&
-                !cancelPressed &&
-                !practiceAutonRunning.load()) {
-                startPracticeAuton();
+            if (practiceAutonRunning.load()) {
+                pros::delay(10);
+                continue;
             }
 
-            practiceCancelHeld = cancelPressed;
+            clearFinishedPracticeTask();
 
-            // Stop normal driver controls while autonomous runs
-            if (practiceAutonRunning.load()) {
+            // Y starts the selected autonomous once.
+            if (yPressed && !rightHeld) {
+                startPracticeAuton();
                 pros::delay(10);
                 continue;
             }
         }
 
-        // Run the selected driver controls
         if (driverMode == COMPETITION) {
             competitionDriver();
-        }
-        else if (driverMode == SKILLS) {
+        } else if (driverMode == SKILLS) {
             skillsDriver();
-        }
-        else {
+        } else {
             practiceDriver();
         }
 
