@@ -7,7 +7,9 @@
 #include "scoring.h"
 #include "scoringMacro.h"
 #include "autonomous.hpp"
-
+#include "mvlib/Optional/lemlib.hpp"
+#define MVLIB_USE_SIMPLES
+#include "mvlib/api.hpp"
 #include <atomic>
 #include <cstdio>
 #include <string>
@@ -176,7 +178,16 @@ void selectAutonomous() {
 
 void initialize() {
     // Do not initialize pros::lcd because RoboDash owns the display.
+    auto& logger = mvlib::Logger::getInstance();
+    logger.setRobot({
+  .leftDrivetrain = &left_motor_group,
+  .rightDrivetrain = &right_motor_group
+});
     chassis.calibrate();
+    mvlib::setOdom(&chassis);
+    logger.start();
+    
+
     liftSetup();
     intakeSetup();
     scoringSetup();

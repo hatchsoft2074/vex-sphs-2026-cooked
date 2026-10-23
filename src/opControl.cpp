@@ -148,12 +148,12 @@ void competitionDriver() {
     updateScoringMacro();
 
     printf(
-        "Lift: %.2f | Intake: %.2f | Scoring: %.2f | Macro: %d\n",
-        getLiftPosition(),
-        getNormalLiftPosition(),
-        getScoringMechPosition(),
-        isScoringMacroRunning()
-    );
+    "Lift: %.2f | Intake: %.2f | Scoring: %.2f | Macro: %d\n",
+    getLiftPosition(),
+    getNormalLiftPosition(),
+    getScoringMechPosition(),
+    isScoringMacroRunning()
+);
 
     pros::delay(25);
 }
