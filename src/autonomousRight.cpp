@@ -27,7 +27,7 @@ pros::delay(500);
 
 scoringWheelsStop();
 
-chassis.moveToPoint(47, 18.778, 4000, {.forwards = false, .maxSpeed = 127});
+chassis.moveToPoint(47, 18, 4000, {.forwards = false, .maxSpeed = 127});
 chassis.turnToHeading(180, 1000);
 liftToPosition(100);
 scoringWheelsReject();

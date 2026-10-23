@@ -8,7 +8,7 @@ pros::Motor liftMotor2(-16);
 int liftSpeed = 127;
 
 double matchLoadPosition = 0;
-double normalLiftPosition = 1380;
+double normalLiftPosition = 1400;
 double maxLiftPosition = 4130;
 
 double liftPositionTolerance = 20;
