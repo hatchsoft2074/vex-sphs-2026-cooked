@@ -1,3 +1,4 @@
+
 #include "lift.h"
 #include "main.h"
 
@@ -7,7 +8,7 @@ pros::Motor liftMotor2(-16);
 int liftSpeed = 127;
 
 double matchLoadPosition = 0;
-double normalLiftPosition = 1360;
+double normalLiftPosition = 1380;
 double maxLiftPosition = 4130;
 
 double liftPositionTolerance = 20;
@@ -39,7 +40,7 @@ void liftSetup() {
 }
 
 double getLiftPosition() {
-    return liftMotor1.get_position();
+    return liftMotor1.get_position() + normalLiftPosition;
 }
 
 double getNormalLiftPosition() {
