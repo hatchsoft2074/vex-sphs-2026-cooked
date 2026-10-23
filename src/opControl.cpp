@@ -105,9 +105,13 @@ void competitionDriver() {
     bool intakeAcceptHeld =
         controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
 
+    bool intakeRejectHeld =
+        !intakeAcceptHeld &&
+        controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
+
     if (intakeAcceptHeld) {
         intakeAccept();
-    } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
+    } else if (intakeRejectHeld) {
         intakeReject();
     } else {
         intakeStop();
@@ -129,31 +133,33 @@ void competitionDriver() {
     }
 
     // Ansh scoring wheels
-    if (intakeAcceptHeld) {
-        scoringWheelsAccept();
-    } else if (!isScoringMacroRunning() && isScoringAutoMovingUp()) {
-        scoringWheelsAccept();
-    } else if (!yHeld) {
-        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
+    if (!isScoringMacroRunning()) {
+        if (intakeAcceptHeld || intakeRejectHeld) {
             scoringWheelsAccept();
-        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) {
-            scoringWheelsReject();
+        } else if (isScoringAutoMovingUp()) {
+            scoringWheelsAccept();
+        } else if (!yHeld) {
+            if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
+                scoringWheelsAccept();
+            } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) {
+                scoringWheelsReject();
+            } else {
+                scoringWheelsStop();
+            }
         } else {
             scoringWheelsStop();
         }
-    } else {
-        scoringWheelsStop();
     }
 
     updateScoringMacro();
 
     printf(
-    "Lift: %.2f | Intake: %.2f | Scoring: %.2f | Macro: %d\n",
-    getLiftPosition(),
-    getNormalLiftPosition(),
-    getScoringMechPosition(),
-    isScoringMacroRunning()
-);
+        "Lift: %.2f | Intake: %.2f | Scoring: %.2f | Macro: %d\n",
+        getLiftPosition(),
+        getNormalLiftPosition(),
+        getScoringMechPosition(),
+        isScoringMacroRunning()
+    );
 
     pros::delay(25);
 }
@@ -207,9 +213,13 @@ void skillsDriver() {
     bool intakeAcceptHeld =
         controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
 
+    bool intakeRejectHeld =
+        !intakeAcceptHeld &&
+        controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
+
     if (intakeAcceptHeld) {
         intakeAccept();
-    } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
+    } else if (intakeRejectHeld) {
         intakeReject();
     } else {
         intakeStop();
@@ -231,22 +241,24 @@ void skillsDriver() {
     }
 
     // Eva scoring wheels
-    if (intakeAcceptHeld) {
-        scoringWheelsAccept();
-    } else if (!isScoringMacroRunning() && isScoringAutoMovingUp()) {
-        scoringWheelsAccept();
-    } else if (!yHeld) {
-        if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
-            changeScoringDirection();
-        }
+    if (!isScoringMacroRunning()) {
+        if (intakeAcceptHeld || intakeRejectHeld) {
+            scoringWheelsAccept();
+        } else if (isScoringAutoMovingUp()) {
+            scoringWheelsAccept();
+        } else if (!yHeld) {
+            if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
+                changeScoringDirection();
+            }
 
-        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
-            scoringWheels();
+            if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
+                scoringWheels();
+            } else {
+                scoringWheelsStop();
+            }
         } else {
             scoringWheelsStop();
         }
-    } else {
-        scoringWheelsStop();
     }
 
     updateScoringMacro();
