@@ -5,17 +5,19 @@
 void AutonCompRight(){
 
 
-chassis.setPose(58, 0, 90);
-chassis.moveToPoint(65, 0, 4000, {.forwards = true, .maxSpeed = 127});
-chassis.turnToHeading(90, 1000);
-chassis.moveToPoint(58, 0, 4000, {.forwards = false, .maxSpeed = 127});
-chassis.turnToHeading(90, 1000);
-chassis.moveToPoint(65.001, 0, 4000, {.forwards = true, .maxSpeed = 127});
-chassis.turnToHeading(90, 1000);
-chassis.moveToPoint(58, 0.164, 4000, {.forwards = false, .maxSpeed = 127});
-chassis.turnToHeading(90, 1000);
-chassis.moveToPoint(58, 0, 4000, {.forwards = true, .maxSpeed = 127});
-chassis.turnToHeading(135, 1000);
+chassis.setPose(61, 0, 90);
+chassis.moveToPoint(65, 0, 4000, {.forwards = true, .minSpeed = 127});
+//chassis.turnToHeading(90, 1000);
+chassis.moveToPoint(61, 0, 4000, {.forwards = false, .minSpeed = 127});
+//chassis.turnToHeading(90, 1000);
+chassis.moveToPoint(65, 0, 4000, {.forwards = true, .minSpeed = 127});
+//chassis.turnToHeading(90, 1000);
+chassis.moveToPoint(61, 0, 4000, {.forwards = false, .minSpeed = 127});
+//chassis.turnToHeading(90, 1000);
+//chassis.moveToPoint(61, 0, 4000, {.forwards = true, .maxSpeed = 127});
+//chassis.turnToHeading(135, 1000);
+chassis.turnToPoint(47, 12.25, 4000, {.forwards = false, .maxSpeed = 127});
+
 chassis.moveToPoint(47, 12.25, 4000, {.forwards = false, .maxSpeed = 127});
 chassis.turnToHeading(180, 1000);
 liftToPosition(1650);
@@ -27,7 +29,7 @@ pros::delay(500);
 
 scoringWheelsStop();
 
-chassis.moveToPoint(47, 18, 4000, {.forwards = false, .maxSpeed = 127});
+chassis.moveToPoint(47, 18.778, 4000, {.forwards = false, .maxSpeed = 127});
 chassis.turnToHeading(180, 1000);
 liftToPosition(100);
 scoringWheelsReject();
