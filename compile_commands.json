@@ -5,12 +5,15 @@
             "-c",
             "-target",
             "armv7ar-none-none-eabi",
-            "-isystem/Users/jen-yulai/Library/Application Support/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-macos/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1",
-            "-isystem/Users/jen-yulai/Library/Application Support/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-macos/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1/arm-none-eabi/thumb/v7-a+simd/hard",
-            "-isystem/Users/jen-yulai/Library/Application Support/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-macos/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1/backward",
-            "-isystem/Users/jen-yulai/Library/Application Support/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-macos/bin/../lib/gcc/arm-none-eabi/14.3.1/include",
-            "-isystem/Users/jen-yulai/Library/Application Support/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-macos/bin/../lib/gcc/arm-none-eabi/14.3.1/include-fixed",
-            "-isystem/Users/jen-yulai/Library/Application Support/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-macos/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include",
+            "-fno-ms-extensions",
+            "-fno-ms-compatibility",
+            "-fno-delayed-template-parsing",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1/arm-none-eabi/thumb/v7-a+simd/hard",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1/backward",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/include",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/include-fixed",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include",
             "-iquote./include",
             "-iquote./include/./",
             "-mcpu=cortex-a9",
@@ -33,10 +36,10 @@
             "--std=gnu++26",
             "-o",
             "bin/autonomousRight.cpp.o",
-            "src/autonomousRight.cpp"
+            "src\\autonomousRight.cpp"
         ],
-        "directory": "/Users/jen-yulai/Downloads/vex-sphs-2026-cooked-main",
-        "file": "src/autonomousRight.cpp"
+        "directory": "C:\\Users\\IanLa\\OneDrive\\Documents\\Vex-SPHS-REAL",
+        "file": "src\\autonomousRight.cpp"
     },
     {
         "arguments": [
@@ -44,12 +47,15 @@
             "-c",
             "-target",
             "armv7ar-none-none-eabi",
-            "-isystem/Users/jen-yulai/Library/Application Support/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-macos/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1",
-            "-isystem/Users/jen-yulai/Library/Application Support/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-macos/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1/arm-none-eabi/thumb/v7-a+simd/hard",
-            "-isystem/Users/jen-yulai/Library/Application Support/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-macos/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1/backward",
-            "-isystem/Users/jen-yulai/Library/Application Support/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-macos/bin/../lib/gcc/arm-none-eabi/14.3.1/include",
-            "-isystem/Users/jen-yulai/Library/Application Support/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-macos/bin/../lib/gcc/arm-none-eabi/14.3.1/include-fixed",
-            "-isystem/Users/jen-yulai/Library/Application Support/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-macos/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include",
+            "-fno-ms-extensions",
+            "-fno-ms-compatibility",
+            "-fno-delayed-template-parsing",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1/arm-none-eabi/thumb/v7-a+simd/hard",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1/backward",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/include",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/include-fixed",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include",
             "-iquote./include",
             "-iquote./include/./",
             "-mcpu=cortex-a9",
@@ -72,9 +78,9 @@
             "--std=gnu++26",
             "-o",
             "bin/autonomousLeft.cpp.o",
-            "src/autonomousLeft.cpp"
+            "src\\autonomousLeft.cpp"
         ],
-        "directory": "/Users/jen-yulai/Downloads/vex-sphs-2026-cooked-main",
-        "file": "src/autonomousLeft.cpp"
+        "directory": "C:\\Users\\IanLa\\OneDrive\\Documents\\Vex-SPHS-REAL",
+        "file": "src\\autonomousLeft.cpp"
     }
 ]

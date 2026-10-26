@@ -20,7 +20,7 @@ chassis.turnToPoint(46.75, 17.5, 4000, {.forwards = false, .minSpeed = 127});
 chassis.moveToPoint(46.75, 17.5, 4000, {.forwards = false, .minSpeed = 127});
 liftToPosition(1650);
 chassis.waitUntilDone();
-scoringTo90();
+scoringTo90(); 
 
 scoringWheelsAccept();
 pros::delay(250);
