@@ -11,3 +11,4 @@
 
 void AutonCompRight();
 void AutonCompLeft();
+void AutonSkills();

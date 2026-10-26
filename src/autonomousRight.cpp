@@ -7,7 +7,7 @@ void AutonCompRight(){
 
 chassis.setPose(61.5, 5.75, 90);
 chassis.moveToPoint(65, 5.75, 4000, {.forwards = true, .minSpeed = 127});
-//hassis.turnToHeading(90, 1000);
+//chassis.turnToHeading(90, 1000);
 chassis.moveToPoint(61.5, 5.75, 4000, {.forwards = false, .minSpeed = 127});
 //chassis.turnToHeading(90, 1000);
 chassis.moveToPoint(65, 5.75, 4000, {.forwards = true, .minSpeed = 127});
@@ -20,7 +20,7 @@ chassis.turnToPoint(46.75, 17.5, 4000, {.forwards = false, .minSpeed = 127});
 chassis.moveToPoint(46.75, 17.5, 4000, {.forwards = false, .minSpeed = 127});
 liftToPosition(1650);
 chassis.waitUntilDone();
-scoringTo90(); 
+scoringTo90();
 
 scoringWheelsAccept();
 pros::delay(250);

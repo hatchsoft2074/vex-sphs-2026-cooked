@@ -35,6 +35,48 @@
             "-funwind-tables",
             "--std=gnu++26",
             "-o",
+            "bin/autonomousLeft.cpp.o",
+            "src\\autonomousLeft.cpp"
+        ],
+        "directory": "C:\\Users\\IanLa\\OneDrive\\Documents\\Vex-SPHS-REAL",
+        "file": "src\\autonomousLeft.cpp"
+    },
+    {
+        "arguments": [
+            "clang++",
+            "-c",
+            "-target",
+            "armv7ar-none-none-eabi",
+            "-fno-ms-extensions",
+            "-fno-ms-compatibility",
+            "-fno-delayed-template-parsing",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1/arm-none-eabi/thumb/v7-a+simd/hard",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include/c++/14.3.1/backward",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/include",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/include-fixed",
+            "-isystemC:/Users/IanLa/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-toolchain-windows/usr/bin/../lib/gcc/arm-none-eabi/14.3.1/../../../../arm-none-eabi/include",
+            "-iquote./include",
+            "-iquote./include/./",
+            "-mcpu=cortex-a9",
+            "-mfpu=neon-fp16",
+            "-mfloat-abi=hard",
+            "-Os",
+            "-g",
+            "-mthumb",
+            "-D_POSIX_THREADS",
+            "-D_UNIX98_THREAD_MUTEX_ATTRIBUTES",
+            "-D_POSIX_TIMERS",
+            "-D_POSIX_MONOTONIC_CLOCK",
+            "-D_PROS_INCLUDE_LIBLVGL_LLEMU_H",
+            "-D_PROS_INCLUDE_LIBLVGL_LLEMU_HPP",
+            "-Wno-psabi",
+            "-ffunction-sections",
+            "-fdata-sections",
+            "-fdiagnostics-color",
+            "-funwind-tables",
+            "--std=gnu++26",
+            "-o",
             "bin/autonomousRight.cpp.o",
             "src\\autonomousRight.cpp"
         ],
@@ -77,10 +119,10 @@
             "-funwind-tables",
             "--std=gnu++26",
             "-o",
-            "bin/autonomousLeft.cpp.o",
-            "src\\autonomousLeft.cpp"
+            "bin/autonomousSkills.cpp.o",
+            "src\\autonomousSkills.cpp"
         ],
         "directory": "C:\\Users\\IanLa\\OneDrive\\Documents\\Vex-SPHS-REAL",
-        "file": "src\\autonomousLeft.cpp"
+        "file": "src\\autonomousSkills.cpp"
     }
 ]

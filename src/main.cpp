@@ -17,7 +17,8 @@
 // RoboDash only selects autonomous routines.
 rd::Selector selector({
     {"Left Auton", AutonCompLeft},
-    {"Right Auton", AutonCompRight}
+    {"Right Auton", AutonCompRight},
+    {"Skills Auton", AutonSkills}
 });
 
 // Use RoboDash for the odometry screen too.
