@@ -14,7 +14,7 @@
 #include <cstdio>
 #include <string>
 
-// RoboDash only selects autonomous routines.
+// RoboDash selects autonomous routines for Competition and Practice.
 rd::Selector selector({
     {"Left Auton", AutonCompLeft},
     {"Right Auton", AutonCompRight},
@@ -155,7 +155,7 @@ void selectDriverMode() {
     }
 }
 
-// RoboDash handles Left/Right. A on the controller confirms it.
+// RoboDash handles the selection. A on the controller confirms it.
 void selectAutonomous() {
     selector.focus();
 
@@ -177,17 +177,34 @@ void selectAutonomous() {
     }
 }
 
+// Skills has no selector, so A on the controller confirms the setup.
+void confirmSkills() {
+    odomScreen.focus();
+    odomScreen.println("Skills ready - press A");
+
+    // Ignore an A press held from before this point.
+    while (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
+        pros::delay(20);
+    }
+
+    while (!controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A)) {
+        pros::delay(20);
+    }
+
+    autonConfirmed = true;
+    controller.rumble(".");
+}
+
 void initialize() {
     // Do not initialize pros::lcd because RoboDash owns the display.
     auto& logger = mvlib::Logger::getInstance();
     logger.setRobot({
-  .leftDrivetrain = &left_motor_group,
-  .rightDrivetrain = &right_motor_group
-});
+        .leftDrivetrain = &left_motor_group,
+        .rightDrivetrain = &right_motor_group
+    });
     chassis.calibrate();
     mvlib::setOdom(&chassis);
     logger.start();
-    
 
     liftSetup();
     intakeSetup();
@@ -197,6 +214,8 @@ void initialize() {
 
     if (driverMode == COMPETITION || driverMode == PRACTICE) {
         selectAutonomous();
+    } else if (driverMode == SKILLS) {
+        confirmSkills();
     }
 
     odomScreen.focus();
@@ -212,8 +231,11 @@ void competition_initialize() {
 }
 
 void autonomous() {
-    // Only Left and Right autonomous routines are in this selector.
-    selector.run_auton();
+    if (driverMode == SKILLS) {
+        AutonSkills();            // Skills profile: comp switch runs skills
+    } else {
+        selector.run_auton();     // Competition and Practice: whatever was picked
+    }
 }
 
 void opcontrol() {
