@@ -1,6 +1,6 @@
-
 #include "lift.h"
 #include "main.h"
+#include <algorithm>
 
 pros::Motor liftMotor1(10);
 pros::Motor liftMotor2(-16);
@@ -41,6 +41,10 @@ void liftSetup() {
 
 double getLiftPosition() {
     return liftMotor1.get_position() + normalLiftPosition;
+}
+
+double getLiftTemperature() {
+    return std::max(liftMotor1.get_temperature(), liftMotor2.get_temperature());
 }
 
 double getNormalLiftPosition() {

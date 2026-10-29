@@ -1,4 +1,3 @@
-
 #include "main.h"
 #include "robotConfigs.h"
 #include "opControl.h"
@@ -85,6 +84,15 @@ void cancelPracticeAuton() {
     controller.rumble("..");
 }
 
+// Hottest motor in a group, in C.
+double hottestInGroup(pros::MotorGroup& group) {
+    double hottest = 0;
+    for (double t : group.get_temperature_all()) {
+        if (t > hottest) hottest = t;
+    }
+    return hottest;
+}
+
 // The odometry screen stays visible after selection.
 void updateScreenTask() {
     while (true) {
@@ -97,6 +105,14 @@ void updateScreenTask() {
             std::snprintf(line, sizeof(line), "Y: %.2f", pose.y);
             odomScreen.println(line);
             std::snprintf(line, sizeof(line), "Theta: %.2f", pose.theta);
+            odomScreen.println(line);
+            std::snprintf(line, sizeof(line), "Temp L:%.0f R:%.0f",
+                          hottestInGroup(left_motor_group),
+                          hottestInGroup(right_motor_group));
+            odomScreen.println(line);
+            std::snprintf(line, sizeof(line), "Lift:%.0f Int:%.0f Scr:%.0f",
+                          getLiftTemperature(), getIntakeTemperature(),
+                          getScoringTemperature());
             odomScreen.println(line);
             odomScreen.println(driverMode == COMPETITION ? "Mode: Competition" :
                                driverMode == SKILLS ? "Mode: Skills" : "Mode: Practice");
@@ -195,6 +211,38 @@ void confirmSkills() {
     controller.rumble(".");
 }
 
+// Registers MVLib watches. Call this before logger.start().
+void setupWatches(mvlib::Logger& logger) {
+    // Cascade (claw) height, in lift motor degrees where 1400 = intake height
+    logger.watch("Cascade Height", LogLevel::INFO, WatchMode::onInterval, 150_mvMs,
+                 []() { return getLiftPosition(); });
+
+    // Scoring mech angle (0 = folded, ~900 = 90 degrees)
+    logger.watch("Scoring Mech Pos", LogLevel::INFO, WatchMode::onInterval, 150_mvMs,
+                 []() { return getScoringMechPosition(); });
+
+    // Lift motor temperature, escalates to WARN when it gets hot
+    logger.watch("Cascade Temp", LogLevel::INFO, WatchMode::onInterval, 2_mvS,
+                 []() { return getLiftTemperature(); },
+                 mvlib::LevelOverride<double>{
+                     .elevatedLevel = LogLevel::WARN,
+                     .predicate = mvlib::asPredicate<double>([](const double& t) { return t > 50.0; }),
+                     .label = "Cascade Temp HOT"
+                 });
+
+    // State flags only print when they flip
+    logger.watch("Match Load Moving", LogLevel::INFO, WatchMode::onChange, 100_mvMs,
+                 []() { return isMatchLoadMoving(); });
+    logger.watch("Scoring Auto Run", LogLevel::INFO, WatchMode::onChange, 100_mvMs,
+                 []() { return isScoringAutoRunning(); });
+    logger.watch("Scoring Macro Run", LogLevel::INFO, WatchMode::onChange, 100_mvMs,
+                 []() { return isScoringMacroRunning(); });
+    logger.watch("Practice Auton Run", LogLevel::INFO, WatchMode::onChange, 100_mvMs,
+                 []() { return practiceAutonRunning.load(); });
+    logger.watch("Driver Mode", LogLevel::INFO, WatchMode::onChange, 250_mvMs,
+                 []() { return static_cast<int>(driverMode); });
+}
+
 void initialize() {
     // Do not initialize pros::lcd because RoboDash owns the display.
     auto& logger = mvlib::Logger::getInstance();
@@ -204,6 +252,7 @@ void initialize() {
     });
     chassis.calibrate();
     mvlib::setOdom(&chassis);
+    setupWatches(logger);
     logger.start();
 
     liftSetup();

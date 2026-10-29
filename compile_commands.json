@@ -119,11 +119,11 @@
             "-funwind-tables",
             "--std=gnu++26",
             "-o",
-            "bin/autonomousRight.cpp.o",
-            "src\\autonomousRight.cpp"
+            "bin/autonomousLeft.cpp.o",
+            "src\\autonomousLeft.cpp"
         ],
         "directory": "C:\\Users\\IanLa\\OneDrive\\Documents\\Vex-SPHS-REAL",
-        "file": "src\\autonomousRight.cpp"
+        "file": "src\\autonomousLeft.cpp"
     },
     {
         "arguments": [
@@ -161,10 +161,10 @@
             "-funwind-tables",
             "--std=gnu++26",
             "-o",
-            "bin/autonomousLeft.cpp.o",
-            "src\\autonomousLeft.cpp"
+            "bin/autonomousRight.cpp.o",
+            "src\\autonomousRight.cpp"
         ],
         "directory": "C:\\Users\\IanLa\\OneDrive\\Documents\\Vex-SPHS-REAL",
-        "file": "src\\autonomousLeft.cpp"
+        "file": "src\\autonomousRight.cpp"
     }
 ]

@@ -23,6 +23,7 @@ bool isScoringAutoMovingUp();
 bool isScoringAutoRunning();
 
 double getScoringMechPosition();
+double getScoringTemperature();
 
 void resetScoringMechPosition();
 

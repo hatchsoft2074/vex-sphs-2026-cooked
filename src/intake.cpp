@@ -3,6 +3,7 @@
 # include "opcontrol.h"
 # include "robotConfigs.h"
 # include "intake.h"
+# include <algorithm>
 
 pros::MotorGroup intake_motors({20, -17}, pros::MotorGears::green);
 
@@ -26,3 +27,10 @@ void intakeStop() {
     intake_motors.move(0);
 }
 
+double getIntakeTemperature() {
+    double hottest = 0;
+    for (double t : intake_motors.get_temperature_all()) {
+        hottest = std::max(hottest, t);
+    }
+    return hottest;
+}

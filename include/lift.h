@@ -7,6 +7,7 @@ void liftDown();
 void liftStop();
 
 double getLiftPosition();
+double getLiftTemperature();
 
 double getNormalLiftPosition();
 double getMatchLoadPosition();

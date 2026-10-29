@@ -1,5 +1,6 @@
 #include "scoring.h"
 #include "main.h"
+#include <algorithm>
 #include "lift.h"
 
 // Scoring motors
@@ -124,6 +125,10 @@ bool isScoringAutoRunning() {
 
 double getScoringMechPosition() {
     return scoringMech.get_position();
+}
+
+double getScoringTemperature() {
+    return std::max(scoringMech.get_temperature(), scoringWheelMotor.get_temperature());
 }
 
 void resetScoringMechPosition() {
