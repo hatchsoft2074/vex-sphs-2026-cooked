@@ -24,6 +24,8 @@ rd::Selector selector({
 rd::Console odomScreen("Odometry");
 
 std::atomic<bool> practiceAutonRunning(false);
+// Keeps the temp/odom screen in front while any auton is running.
+std::atomic<bool> keepScreenFocus{false};
 pros::Task* practiceAutonTask = nullptr;
 bool practiceCancelHeld = false;
 bool autonConfirmed = false;
@@ -81,6 +83,7 @@ void cancelPracticeAuton() {
 
     stopPracticeAutonMotors();
     practiceAutonRunning.store(false);
+    keepScreenFocus.store(false);
     controller.rumble("..");
 }
 
@@ -99,12 +102,11 @@ void updateScreenTask() {
         if (autonConfirmed || driverMode == SKILLS) {
             auto pose = chassis.getPose();
             char line[96];
+            // Auton variations (and the selector) must not hide the temps.
+            if (keepScreenFocus.load()) odomScreen.focus();
             odomScreen.clear();
-            std::snprintf(line, sizeof(line), "X: %.2f", pose.x);
-            odomScreen.println(line);
-            std::snprintf(line, sizeof(line), "Y: %.2f", pose.y);
-            odomScreen.println(line);
-            std::snprintf(line, sizeof(line), "Theta: %.2f", pose.theta);
+            std::snprintf(line, sizeof(line), "X:%.1f Y:%.1f Th:%.1f",
+                          pose.x, pose.y, pose.theta);
             odomScreen.println(line);
             std::snprintf(line, sizeof(line), "Temp L:%.0f R:%.0f",
                           hottestInGroup(left_motor_group),
@@ -118,6 +120,8 @@ void updateScreenTask() {
                                driverMode == SKILLS ? "Mode: Skills" : "Mode: Practice");
             if (driverMode != SKILLS) {
                 odomScreen.println("Auton: " + selectedAutonName);
+            } else if (!autonConfirmed) {
+                odomScreen.println("Skills ready - press A");
             }
             pros::delay(250);
         } else {
@@ -195,9 +199,7 @@ void selectAutonomous() {
 
 // Skills has no selector, so A on the controller confirms the setup.
 void confirmSkills() {
-    odomScreen.focus();
-    odomScreen.println("Skills ready - press A");
-
+    // The screen task is already showing the live screen with the prompt.
     // Ignore an A press held from before this point.
     while (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
         pros::delay(20);
@@ -264,7 +266,11 @@ void initialize() {
     if (driverMode == COMPETITION || driverMode == PRACTICE) {
         selectAutonomous();
     } else if (driverMode == SKILLS) {
+        // Show temps/odom while waiting for A.
+        odomScreen.focus();
+        pros::Task screen_task(updateScreenTask);
         confirmSkills();
+        return;
     }
 
     odomScreen.focus();
@@ -280,14 +286,19 @@ void competition_initialize() {
 }
 
 void autonomous() {
+    keepScreenFocus.store(true);
+    odomScreen.focus();
     if (driverMode == SKILLS) {
         AutonSkills();            // Skills profile: comp switch runs skills
     } else {
         selector.run_auton();     // Competition and Practice: whatever was picked
     }
+    keepScreenFocus.store(false);
 }
 
 void opcontrol() {
+    keepScreenFocus.store(false);
+    odomScreen.focus();
     while (true) {
         if (driverMode == PRACTICE) {
             bool yPressed = controller.get_digital_new_press(

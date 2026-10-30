@@ -8,7 +8,7 @@ pros::Motor scoringMech(8);
 pros::Motor scoringWheelMotor(9);
 
 int scoringMechSpeed = 80;
-int scoringWheelsSpeed = 45;
+int scoringWheelsSpeed = 65;
 
 // Automatic scoring settings
 double scoringAutoUpHeight = 1950;
