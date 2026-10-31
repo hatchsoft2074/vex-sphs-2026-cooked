@@ -23,14 +23,14 @@ rd::Selector selector({
     {"Skills Auton", AutonSkills}
 });
 
-// Odometry screen: telemetry text on the left, the little blue guy on the right.
+// Odometry screen: telemetry text on the left, the image on the right.
 // It is a RoboDash view with the same clear/println/focus calls as rd::Console,
 // plus render(), which pushes the text onto the screen.
 class OdomScreen {
   private:
     rd_view_t* view;
     lv_obj_t* label;
-    lv_obj_t* face;
+    lv_obj_t* image;
     std::string text;
 
   public:
@@ -44,9 +44,9 @@ class OdomScreen {
         lv_obj_align(label, LV_ALIGN_TOP_LEFT, 10, 8);
         lv_label_set_text(label, "");
 
-        face = lv_img_create(root);
-        lv_img_set_src(face, &face_img);
-        lv_obj_align(face, LV_ALIGN_BOTTOM_RIGHT, -10, -10);
+        image = lv_img_create(root);
+        lv_img_set_src(image, &image_dsc);
+        lv_obj_align(image, LV_ALIGN_BOTTOM_RIGHT, -10, -10);
     }
 
     void clear() { text.clear(); }
