@@ -7,6 +7,9 @@
 #include "scoringMacro.h"
 #include "autonomous.hpp"
 #include "mvlib/Optional/lemlib.hpp"
+#include "robodash/core.h"
+#include "liblvgl/lvgl.h"
+#include "image.h"
 #define MVLIB_USE_SIMPLES
 #include "mvlib/api.hpp"
 #include <atomic>
@@ -20,8 +23,39 @@ rd::Selector selector({
     {"Skills Auton", AutonSkills}
 });
 
-// Use RoboDash for the odometry screen too.
-rd::Console odomScreen("Odometry");
+// Odometry screen: telemetry text on the left, the little blue guy on the right.
+// It is a RoboDash view with the same clear/println/focus calls as rd::Console,
+// plus render(), which pushes the text onto the screen.
+class OdomScreen {
+  private:
+    rd_view_t* view;
+    lv_obj_t* label;
+    lv_obj_t* face;
+    std::string text;
+
+  public:
+    explicit OdomScreen(const char* name) {
+        view = rd_view_create(name);
+        lv_obj_t* root = rd_view_obj(view);
+
+        label = lv_label_create(root);
+        lv_obj_set_style_text_font(label, &lv_font_montserrat_16, 0);
+        lv_obj_set_style_text_color(label, lv_color_white(), 0);
+        lv_obj_align(label, LV_ALIGN_TOP_LEFT, 10, 8);
+        lv_label_set_text(label, "");
+
+        face = lv_img_create(root);
+        lv_img_set_src(face, &face_img);
+        lv_obj_align(face, LV_ALIGN_BOTTOM_RIGHT, -10, -10);
+    }
+
+    void clear() { text.clear(); }
+    void println(const std::string& line) { text += line; text += '\n'; }
+    void render() { lv_label_set_text(label, text.c_str()); }
+    void focus() { rd_view_focus(view); }
+};
+
+OdomScreen odomScreen("Odometry");
 
 std::atomic<bool> practiceAutonRunning(false);
 // Keeps the temp/odom screen in front while any auton is running.
@@ -99,14 +133,21 @@ double hottestInGroup(pros::MotorGroup& group) {
 // The odometry screen stays visible after selection.
 void updateScreenTask() {
     while (true) {
-        if (autonConfirmed || driverMode == SKILLS) {
+        if (autonConfirmed) {
             auto pose = chassis.getPose();
             char line[96];
             // Auton variations (and the selector) must not hide the temps.
             if (keepScreenFocus.load()) odomScreen.focus();
             odomScreen.clear();
-            std::snprintf(line, sizeof(line), "X:%.1f Y:%.1f Th:%.1f",
-                          pose.x, pose.y, pose.theta);
+            std::snprintf(line, sizeof(line), "X: %.2f", pose.x);
+            odomScreen.println(line);
+            std::snprintf(line, sizeof(line), "Y: %.2f", pose.y);
+            odomScreen.println(line);
+            std::snprintf(line, sizeof(line), "Theta: %.2f", pose.theta);
+            odomScreen.println(line);
+            std::snprintf(line, sizeof(line), "Casc Height: %.0f", getLiftPosition());
+            odomScreen.println(line);
+            std::snprintf(line, sizeof(line), "Claw Height: %.0f", getScoringMechPosition());
             odomScreen.println(line);
             std::snprintf(line, sizeof(line), "Temp L:%.0f R:%.0f",
                           hottestInGroup(left_motor_group),
@@ -120,9 +161,8 @@ void updateScreenTask() {
                                driverMode == SKILLS ? "Mode: Skills" : "Mode: Practice");
             if (driverMode != SKILLS) {
                 odomScreen.println("Auton: " + selectedAutonName);
-            } else if (!autonConfirmed) {
-                odomScreen.println("Skills ready - press A");
             }
+            odomScreen.render();
             pros::delay(250);
         } else {
             pros::delay(50);
@@ -199,7 +239,11 @@ void selectAutonomous() {
 
 // Skills has no selector, so A on the controller confirms the setup.
 void confirmSkills() {
-    // The screen task is already showing the live screen with the prompt.
+    odomScreen.focus();
+    odomScreen.clear();
+    odomScreen.println("Skills ready - press A");
+    odomScreen.render();
+
     // Ignore an A press held from before this point.
     while (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
         pros::delay(20);
@@ -266,11 +310,7 @@ void initialize() {
     if (driverMode == COMPETITION || driverMode == PRACTICE) {
         selectAutonomous();
     } else if (driverMode == SKILLS) {
-        // Show temps/odom while waiting for A.
-        odomScreen.focus();
-        pros::Task screen_task(updateScreenTask);
         confirmSkills();
-        return;
     }
 
     odomScreen.focus();
