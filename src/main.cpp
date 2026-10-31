@@ -12,6 +12,7 @@
 #include "image.h"
 #define MVLIB_USE_SIMPLES
 #include "mvlib/api.hpp"
+#include <algorithm>
 #include <atomic>
 #include <cstdio>
 #include <string>
@@ -31,6 +32,7 @@ class OdomScreen {
     rd_view_t* view;
     lv_obj_t* label;
     lv_obj_t* image;
+    lv_obj_t* warnBar;
     std::string text;
 
   public:
@@ -47,6 +49,37 @@ class OdomScreen {
         image = lv_img_create(root);
         lv_img_set_src(image, &image_dsc);
         lv_obj_align(image, LV_ALIGN_BOTTOM_RIGHT, -10, -10);
+
+        // Red warning bar across the top. Hidden until showWarning(true).
+        warnBar = lv_obj_create(root);
+        lv_obj_set_size(warnBar, lv_pct(100), 30);
+        lv_obj_align(warnBar, LV_ALIGN_TOP_MID, 0, 0);
+        lv_obj_set_style_bg_color(warnBar, lv_color_hex(0xE01010), 0);
+        lv_obj_set_style_bg_opa(warnBar, LV_OPA_COVER, 0);
+        lv_obj_set_style_border_width(warnBar, 0, 0);
+        lv_obj_set_style_radius(warnBar, 0, 0);
+        lv_obj_set_style_pad_all(warnBar, 0, 0);
+        lv_obj_clear_flag(warnBar, LV_OBJ_FLAG_SCROLLABLE);
+
+        lv_obj_t* warnText = lv_label_create(warnBar);
+        lv_obj_set_style_text_font(warnText, &lv_font_montserrat_20, 0);
+        lv_obj_set_style_text_color(warnText, lv_color_white(), 0);
+        lv_label_set_text(warnText, "Warning: Burnout!");
+        lv_obj_center(warnText);
+
+        lv_obj_add_flag(warnBar, LV_OBJ_FLAG_HIDDEN);
+    }
+
+    // Show or hide the red bar. The text moves down so the bar doesn't cover it.
+    void showWarning(bool on) {
+        if (on) {
+            lv_obj_clear_flag(warnBar, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_move_foreground(warnBar);
+            lv_obj_align(label, LV_ALIGN_TOP_LEFT, 10, 36);
+        } else {
+            lv_obj_add_flag(warnBar, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_align(label, LV_ALIGN_TOP_LEFT, 10, 8);
+        }
     }
 
     void clear() { text.clear(); }
@@ -130,6 +163,10 @@ double hottestInGroup(pros::MotorGroup& group) {
     return hottest;
 }
 
+// V5 motors report in 5 C steps and start cutting power around 55 C.
+// The red "Warning: Burnout!" bar shows once any motor reaches this.
+constexpr double TEMP_BURNOUT = 55.0;
+
 // The odometry screen stays visible after selection.
 void updateScreenTask() {
     while (true) {
@@ -139,9 +176,18 @@ void updateScreenTask() {
             // Auton variations (and the selector) must not hide the temps.
             if (keepScreenFocus.load()) odomScreen.focus();
             odomScreen.clear();
-            std::snprintf(line, sizeof(line), "X: %.2f", pose.x);
-            odomScreen.println(line);
-            std::snprintf(line, sizeof(line), "Y: %.2f", pose.y);
+            // DT = hottest drivetrain motor on either side.
+            double dtTemp = std::max(hottestInGroup(left_motor_group),
+                                     hottestInGroup(right_motor_group));
+            double liftTemp = getLiftTemperature();
+            double intakeTemp = getIntakeTemperature();
+            double scoreTemp = getScoringTemperature();
+
+            // Red bar when any motor (including the scoring ones) is at the limit.
+            odomScreen.showWarning(std::max({dtTemp, liftTemp, intakeTemp, scoreTemp})
+                                   >= TEMP_BURNOUT);
+
+            std::snprintf(line, sizeof(line), "X: %.2f  Y: %.2f", pose.x, pose.y);
             odomScreen.println(line);
             std::snprintf(line, sizeof(line), "Theta: %.2f", pose.theta);
             odomScreen.println(line);
@@ -149,13 +195,9 @@ void updateScreenTask() {
             odomScreen.println(line);
             std::snprintf(line, sizeof(line), "Claw Height: %.0f", getScoringMechPosition());
             odomScreen.println(line);
-            std::snprintf(line, sizeof(line), "Temp L:%.0f R:%.0f",
-                          hottestInGroup(left_motor_group),
-                          hottestInGroup(right_motor_group));
-            odomScreen.println(line);
-            std::snprintf(line, sizeof(line), "Lift:%.0f Int:%.0f Scr:%.0f",
-                          getLiftTemperature(), getIntakeTemperature(),
-                          getScoringTemperature());
+            odomScreen.println("Temp -");
+            std::snprintf(line, sizeof(line), "DT: %.0f  Lift: %.0f  Int: %.0f",
+                          dtTemp, liftTemp, intakeTemp);
             odomScreen.println(line);
             odomScreen.println(driverMode == COMPETITION ? "Mode: Competition" :
                                driverMode == SKILLS ? "Mode: Skills" : "Mode: Practice");
