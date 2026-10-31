@@ -11,7 +11,7 @@ int scoringMechSpeed = 80;
 int scoringWheelsSpeed = 65;
 
 // Automatic scoring settings
-double scoringAutoUpHeight = 1950;
+double scoringAutoUpHeight = 1850;
 double scoringAutoDownHeight = 1400;
 double scoring90Position = 900;
 double scoringFoldedPosition = 0;
