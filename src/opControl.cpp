@@ -126,7 +126,11 @@ void competitionDriver() {
             syncScoringAuto();
             scoringMechDown();
         } else {
-            if (!updateScoringAuto()) {
+            // Match load movement does not automatically fold the claw
+            if (isMatchLoadMoving()) {
+                syncScoringAuto();
+                scoringMechStop();
+            } else if (!updateScoringAuto()) {
                 scoringMechStop();
             }
         }
@@ -234,7 +238,11 @@ void skillsDriver() {
             syncScoringAuto();
             scoringMechDown();
         } else {
-            if (!updateScoringAuto()) {
+            // Match load movement does not automatically fold the claw
+            if (isMatchLoadMoving()) {
+                syncScoringAuto();
+                scoringMechStop();
+            } else if (!updateScoringAuto()) {
                 scoringMechStop();
             }
         }

@@ -1,3 +1,4 @@
+
 #include "scoring.h"
 #include "main.h"
 #include <algorithm>
@@ -15,6 +16,7 @@ double scoringAutoUpHeight = 1850;
 double scoringAutoDownHeight = 1400;
 double scoring90Position = 900;
 double scoringFoldedPosition = 0;
+double scoringPinPosition = 600;
 double scoringAutoTolerance = 25;
 
 double previousLiftPosition = 0;
@@ -41,7 +43,9 @@ void scoringMechStop() {
 }
 
 void scoringWheels() {
-    scoringWheelMotor.move(scoringDirection ? -scoringWheelsSpeed : scoringWheelsSpeed);
+    scoringWheelMotor.move(
+        scoringDirection ? -scoringWheelsSpeed : scoringWheelsSpeed
+    );
 }
 
 void scoringWheelsAccept() {
@@ -82,20 +86,24 @@ bool updateScoringAuto() {
     checkScoringAutoTrigger();
 
     if (scoringAutoMovingUp) {
-        if (getScoringMechPosition() < scoring90Position - scoringAutoTolerance) {
+        if (getScoringMechPosition() <
+            scoring90Position - scoringAutoTolerance) {
             scoringMechUp();
             return true;
         }
+
         scoringMechStop();
         scoringAutoMovingUp = false;
         return false;
     }
 
     if (scoringAutoMovingDown) {
-        if (getScoringMechPosition() > scoringFoldedPosition + scoringAutoTolerance) {
+        if (getScoringMechPosition() >
+            scoringFoldedPosition + scoringAutoTolerance) {
             scoringMechDown();
             return true;
         }
+
         scoringMechStop();
         scoringAutoMovingDown = false;
         return false;
@@ -128,21 +136,25 @@ double getScoringMechPosition() {
 }
 
 double getScoringTemperature() {
-    return std::max(scoringMech.get_temperature(), scoringWheelMotor.get_temperature());
+    return std::max(
+        scoringMech.get_temperature(),
+        scoringWheelMotor.get_temperature()
+    );
 }
 
 void resetScoringMechPosition() {
     scoringMech.tare_position();
 }
 
-// Move scoring mechanism to the 90 degree position
+// Move claw to the 90 degree position
 void scoringTo90() {
     cancelScoringAuto();
 
     unsigned int start = pros::millis();
 
     while (pros::millis() - start < 2000) {
-        if (getScoringMechPosition() >= scoring90Position - scoringAutoTolerance) {
+        if (getScoringMechPosition() >=
+            scoring90Position - scoringAutoTolerance) {
             break;
         }
 
@@ -153,18 +165,42 @@ void scoringTo90() {
     scoringMechStop();
 }
 
-// Fold scoring mechanism back to its starting position
+// Fold claw back to its starting position
 void scoringFold() {
     cancelScoringAuto();
 
     unsigned int start = pros::millis();
 
     while (pros::millis() - start < 2000) {
-        if (getScoringMechPosition() <= scoringFoldedPosition + scoringAutoTolerance) {
+        if (getScoringMechPosition() <=
+            scoringFoldedPosition + scoringAutoTolerance) {
             break;
         }
 
         scoringMechDown();
+        pros::delay(20);
+    }
+
+    scoringMechStop();
+}
+
+// Move claw to position 600 for picking up pins
+void scoringToPin() {
+    cancelScoringAuto();
+
+    unsigned int start = pros::millis();
+
+    while (pros::millis() - start < 2000) {
+        double currentPosition = getScoringMechPosition();
+
+        if (currentPosition < scoringPinPosition - scoringAutoTolerance) {
+            scoringMechUp();
+        } else if (currentPosition > scoringPinPosition + scoringAutoTolerance) {
+            scoringMechDown();
+        } else {
+            break;
+        }
+
         pros::delay(20);
     }
 
