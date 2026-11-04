@@ -75,9 +75,8 @@ void competitionDriver() {
     int curvedThrottle = throttleCurve.curve(leftY);
     int curvedSteer = steerCurve.curve(rightX);
 
-    if (!isScoringMacroRunning()) {
-        chassis.arcade(curvedThrottle, curvedSteer, true);
-    }
+    // Driving works while the macro runs
+    chassis.arcade(curvedThrottle, curvedSteer, true);
 
     // Ansh lift controls
     if (!isScoringMacroRunning()) {
@@ -137,22 +136,21 @@ void competitionDriver() {
     }
 
     // Ansh scoring wheels
-    if (!isScoringMacroRunning()) {
-        if (intakeAcceptHeld || intakeRejectHeld) {
+    // These still work while the macro runs
+    if (intakeAcceptHeld || intakeRejectHeld) {
+        scoringWheelsAccept();
+    } else if (isScoringAutoMovingUp()) {
+        scoringWheelsAccept();
+    } else if (!yHeld) {
+        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
             scoringWheelsAccept();
-        } else if (isScoringAutoMovingUp()) {
-            scoringWheelsAccept();
-        } else if (!yHeld) {
-            if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
-                scoringWheelsAccept();
-            } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) {
-                scoringWheelsReject();
-            } else {
-                scoringWheelsStop();
-            }
+        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) {
+            scoringWheelsReject();
         } else {
             scoringWheelsStop();
         }
+    } else {
+        scoringWheelsStop();
     }
 
     updateScoringMacro();
@@ -187,9 +185,8 @@ void skillsDriver() {
     int curvedThrottle = throttleCurve.curve(leftY);
     int curvedSteer = steerCurve.curve(rightX);
 
-    if (!isScoringMacroRunning()) {
-        chassis.arcade(curvedThrottle, curvedSteer, true);
-    }
+    // Driving works while the macro runs
+    chassis.arcade(curvedThrottle, curvedSteer, true);
 
     // Eva lift controls
     if (!isScoringMacroRunning()) {
@@ -249,24 +246,23 @@ void skillsDriver() {
     }
 
     // Eva scoring wheels
-    if (!isScoringMacroRunning()) {
-        if (intakeAcceptHeld || intakeRejectHeld) {
-            scoringWheelsAccept();
-        } else if (isScoringAutoMovingUp()) {
-            scoringWheelsAccept();
-        } else if (!yHeld) {
-            if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
-                changeScoringDirection();
-            }
+    // These still work while the macro runs
+    if (intakeAcceptHeld || intakeRejectHeld) {
+        scoringWheelsAccept();
+    } else if (isScoringAutoMovingUp()) {
+        scoringWheelsAccept();
+    } else if (!yHeld) {
+        if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
+            changeScoringDirection();
+        }
 
-            if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
-                scoringWheels();
-            } else {
-                scoringWheelsStop();
-            }
+        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
+            scoringWheels();
         } else {
             scoringWheelsStop();
         }
+    } else {
+        scoringWheelsStop();
     }
 
     updateScoringMacro();
