@@ -16,9 +16,9 @@ double liftSlowdownStart = 600;
 double liftMediumDistance = 300;
 double liftFinalDistance = 100;
 
-int liftMediumSpeed = 65;
-int liftSlowSpeed = 30;
-int liftFinalSpeed = 35;
+int liftMediumSpeed = 50;
+int liftSlowSpeed = 25;
+int liftFinalSpeed = 18;
 
 bool matchLoadMoving = false;
 double matchLoadTarget = 0;
