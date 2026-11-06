@@ -8,13 +8,13 @@
 pros::Motor scoringMech(8);
 pros::Motor scoringWheelMotor(9);
 
-int scoringMechSpeed = 80;
-int scoringWheelsSpeed = 65;
+int scoringMechSpeed = 70;
+int scoringWheelsSpeed = 127;
 
 // Automatic scoring settings
 double scoringAutoUpHeight = 1850;
 double scoringAutoDownHeight = 1400;
-double scoring90Position = 900;
+double scoring90Position = 880;
 double scoringFoldedPosition = 0;
 double scoringPinPosition = 600;
 double scoringAutoTolerance = 25;
