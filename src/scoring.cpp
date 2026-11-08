@@ -17,6 +17,7 @@ double scoringAutoDownHeight = 1400;
 double scoring90Position = 850;
 double scoringFoldedPosition = 0;
 double scoringPinPosition = 600;
+double scoringPickupPosition = 1150;
 double scoringAutoTolerance = 25;
 
 double previousLiftPosition = 0;
@@ -196,6 +197,29 @@ void scoringToPin() {
         if (currentPosition < scoringPinPosition - scoringAutoTolerance) {
             scoringMechUp();
         } else if (currentPosition > scoringPinPosition + scoringAutoTolerance) {
+            scoringMechDown();
+        } else {
+            break;
+        }
+
+        pros::delay(20);
+    }
+
+    scoringMechStop();
+}
+
+// Move claw to the pickup position
+void scoringToPickup() {
+    cancelScoringAuto();
+
+    unsigned int start = pros::millis();
+
+    while (pros::millis() - start < 2000) {
+        double currentPosition = getScoringMechPosition();
+
+        if (currentPosition < scoringPickupPosition - scoringAutoTolerance) {
+            scoringMechUp();
+        } else if (currentPosition > scoringPickupPosition + scoringAutoTolerance) {
             scoringMechDown();
         } else {
             break;

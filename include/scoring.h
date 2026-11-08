@@ -33,6 +33,7 @@ void resetScoringMechPosition();
 void scoringTo90();
 void scoringFold();
 void scoringToPin();
+void scoringToPickup();
 
 // Timed scoring wheels
 void scoringRejectFor(int milliseconds);
