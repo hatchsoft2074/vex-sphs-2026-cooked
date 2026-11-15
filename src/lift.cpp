@@ -113,16 +113,18 @@ int getLiftDownSpeed(double distance) {
     return liftSpeed;
 }
 
+// Manual lift up at full speed
 void liftUp() {
-    cancelLiftAsync();
+    liftAsyncMoving = false;
     cancelMatchLoad();
 
     liftMotor1.move(liftSpeed);
     liftMotor2.move(liftSpeed);
 }
 
+// Manual lift down with slowdown near normal height
 void liftDown() {
-    cancelLiftAsync();
+    liftAsyncMoving = false;
     cancelMatchLoad();
 
     double distance = getLiftPosition() - normalLiftPosition;
