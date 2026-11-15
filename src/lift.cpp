@@ -1,4 +1,3 @@
-
 #include "lift.h"
 #include "main.h"
 #include <algorithm>
@@ -29,205 +28,209 @@ double matchLoadTarget = 0;
 std::atomic<bool> liftAsyncMoving(false);
 std::atomic<double> liftAsyncTarget(0);
 std::atomic<unsigned int> liftAsyncStart(0);
+std::atomic<unsigned int> liftAsyncTimeout(3000);
 
 void liftStop() {
-    liftMotor1.move(0);
-    liftMotor2.move(0);
+liftMotor1.move(0);
+liftMotor2.move(0);
 }
 
 void cancelLiftAsync() {
-    liftAsyncMoving = false;
-    liftStop();
+liftAsyncMoving = false;
+liftStop();
 }
 
 bool isLiftAsyncMoving() {
-    return liftAsyncMoving.load();
+return liftAsyncMoving.load();
 }
 
 void liftSetup() {
-    liftMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    liftMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+liftMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+liftMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-    liftMotor1.tare_position();
-    liftMotor2.tare_position();
+liftMotor1.tare_position();
+liftMotor2.tare_position();
 
-    matchLoadMoving = false;
-    liftAsyncMoving = false;
-    liftStop();
+matchLoadMoving = false;
+liftAsyncMoving = false;
+liftStop();
 
-    // Run the async lift controller in the background
-    static pros::Task liftTask([] {
-        while (true) {
-            if (liftAsyncMoving.load()) {
-                double target = liftAsyncTarget.load();
-                unsigned int start = liftAsyncStart.load();
+// Run the async lift controller in the background
+static pros::Task liftTask([] {
+while (true) {
+if (liftAsyncMoving.load()) {
+double target = liftAsyncTarget.load();
+unsigned int start = liftAsyncStart.load();
+unsigned int timeout = liftAsyncTimeout.load();
 
-                if (moveLiftToPosition(target) ||
-                    pros::millis() - start >= 3000) {
-                    liftAsyncMoving = false;
-                    liftStop();
-                }
-            }
+if (moveLiftToPosition(target) ||
+pros::millis() - start >= timeout) {
+liftAsyncMoving = false;
+liftStop();
+}
+}
 
-            pros::delay(20);
-        }
-    });
+pros::delay(20);
+}
+});
 }
 
 double getLiftPosition() {
-    return liftMotor1.get_position() + normalLiftPosition;
+return liftMotor1.get_position() + normalLiftPosition;
 }
 
 double getLiftTemperature() {
-    return std::max(
-        liftMotor1.get_temperature(),
-        liftMotor2.get_temperature()
-    );
+return std::max(
+liftMotor1.get_temperature(),
+liftMotor2.get_temperature()
+);
 }
 
 double getNormalLiftPosition() {
-    return normalLiftPosition;
+return normalLiftPosition;
 }
 
 double getMatchLoadPosition() {
-    return matchLoadPosition;
+return matchLoadPosition;
 }
 
 double getMaxLiftPosition() {
-    return maxLiftPosition;
+return maxLiftPosition;
 }
 
 int getLiftDownSpeed(double distance) {
-    if (distance <= liftFinalDistance) {
-        return liftFinalSpeed;
-    }
+if (distance <= liftFinalDistance) {
+return liftFinalSpeed;
+}
 
-    if (distance <= liftMediumDistance) {
-        return liftSlowSpeed;
-    }
+if (distance <= liftMediumDistance) {
+return liftSlowSpeed;
+}
 
-    if (distance <= liftSlowdownStart) {
-        return liftMediumSpeed;
-    }
+if (distance <= liftSlowdownStart) {
+return liftMediumSpeed;
+}
 
-    return liftSpeed;
+return liftSpeed;
 }
 
 // Manual lift up at full speed
 void liftUp() {
-    liftAsyncMoving = false;
-    cancelMatchLoad();
+liftAsyncMoving = false;
+cancelMatchLoad();
 
-    liftMotor1.move(liftSpeed);
-    liftMotor2.move(liftSpeed);
+liftMotor1.move(liftSpeed);
+liftMotor2.move(liftSpeed);
 }
 
 // Manual lift down with slowdown near normal height
 void liftDown() {
-    liftAsyncMoving = false;
-    cancelMatchLoad();
+liftAsyncMoving = false;
+cancelMatchLoad();
 
-    double distance = getLiftPosition() - normalLiftPosition;
+double distance = getLiftPosition() - normalLiftPosition;
 
-    if (distance <= 0) {
-        liftStop();
-        return;
-    }
+if (distance <= 0) {
+liftStop();
+return;
+}
 
-    int speed = getLiftDownSpeed(distance);
+int speed = getLiftDownSpeed(distance);
 
-    liftMotor1.move(-speed);
-    liftMotor2.move(-speed);
+liftMotor1.move(-speed);
+liftMotor2.move(-speed);
 }
 
 bool moveLiftToPosition(double targetPosition) {
-    double error = targetPosition - getLiftPosition();
+double error = targetPosition - getLiftPosition();
 
-    if (error > liftPositionTolerance) {
-        int speed = liftSpeed;
+if (error > liftPositionTolerance) {
+int speed = liftSpeed;
 
-        if (error <= liftFinalDistance) {
-            speed = liftFinalSpeed;
-        } else if (error <= liftMediumDistance) {
-            speed = liftSlowSpeed;
-        } else if (error <= liftSlowdownStart) {
-            speed = liftMediumSpeed;
-        }
+if (error <= liftFinalDistance) {
+speed = liftFinalSpeed;
+} else if (error <= liftMediumDistance) {
+speed = liftSlowSpeed;
+} else if (error <= liftSlowdownStart) {
+speed = liftMediumSpeed;
+}
 
-        liftMotor1.move(speed);
-        liftMotor2.move(speed);
+liftMotor1.move(speed);
+liftMotor2.move(speed);
 
-        return false;
-    }
+return false;
+}
 
-    if (error < -liftPositionTolerance) {
-        int speed = getLiftDownSpeed(-error);
+if (error < -liftPositionTolerance) {
+int speed = getLiftDownSpeed(-error);
 
-        liftMotor1.move(-speed);
-        liftMotor2.move(-speed);
+liftMotor1.move(-speed);
+liftMotor2.move(-speed);
 
-        return false;
-    }
+return false;
+}
 
-    liftStop();
-    return true;
+liftStop();
+return true;
 }
 
 // Move lift and wait until it finishes
-void liftToPosition(double targetPosition) {
-    cancelLiftAsync();
-    cancelMatchLoad();
+void liftToPosition(double targetPosition, int timeout) {
+cancelLiftAsync();
+cancelMatchLoad();
 
-    unsigned int start = pros::millis();
+unsigned int start = pros::millis();
 
-    while (pros::millis() - start < 3000) {
-        if (moveLiftToPosition(targetPosition)) {
-            break;
-        }
+while (pros::millis() - start < static_cast<unsigned int>(std::max(0, timeout))) {
+if (moveLiftToPosition(targetPosition)) {
+break;
+}
 
-        pros::delay(20);
-    }
+pros::delay(20);
+}
 
-    liftStop();
+liftStop();
 }
 
 // Start moving lift without waiting
-void liftToPositionAsync(double targetPosition) {
-    cancelMatchLoad();
+void liftToPositionAsync(double targetPosition, int timeout) {
+cancelMatchLoad();
 
-    liftAsyncTarget = targetPosition;
-    liftAsyncStart = pros::millis();
-    liftAsyncMoving = true;
+liftAsyncMoving = false;
+liftAsyncTarget = targetPosition;
+liftAsyncTimeout = static_cast<unsigned int>(std::max(0, timeout));
+liftAsyncStart = pros::millis();
+liftAsyncMoving = true;
 }
 
 void toggleMatchLoad() {
-    cancelLiftAsync();
+cancelLiftAsync();
 
-    double currentPosition = getLiftPosition();
+double currentPosition = getLiftPosition();
 
-    if (currentPosition >= normalLiftPosition - liftPositionTolerance) {
-        matchLoadTarget = matchLoadPosition;
-    } else {
-        matchLoadTarget = normalLiftPosition;
-    }
+if (currentPosition >= normalLiftPosition - liftPositionTolerance) {
+matchLoadTarget = matchLoadPosition;
+} else {
+matchLoadTarget = normalLiftPosition;
+}
 
-    matchLoadMoving = true;
+matchLoadMoving = true;
 }
 
 void updateMatchLoad() {
-    if (!matchLoadMoving) {
-        return;
-    }
+if (!matchLoadMoving) {
+return;
+}
 
-    if (moveLiftToPosition(matchLoadTarget)) {
-        matchLoadMoving = false;
-    }
+if (moveLiftToPosition(matchLoadTarget)) {
+matchLoadMoving = false;
+}
 }
 
 void cancelMatchLoad() {
-    matchLoadMoving = false;
+matchLoadMoving = false;
 }
 
 bool isMatchLoadMoving() {
-    return matchLoadMoving;
+return matchLoadMoving;
 }

@@ -1,4 +1,3 @@
-
 #pragma once
 
 // Scoring setup
@@ -30,10 +29,10 @@ double getScoringTemperature();
 void resetScoringMechPosition();
 
 // Claw positions for autonomous
-void scoringTo90();
-void scoringFold();
-void scoringToPin();
-void scoringToPickup();
+void scoringTo90(int timeout = 2000);
+void scoringFold(int timeout = 2000);
+void scoringToPin(int timeout = 2000);
+void scoringToPickup(int timeout = 2000);
 
 // Timed scoring wheels
 void scoringRejectFor(int milliseconds);
