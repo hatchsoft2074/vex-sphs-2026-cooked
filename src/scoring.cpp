@@ -17,7 +17,7 @@ double scoringAutoDownHeight = 1400;
 double scoring90Position = 850;
 double scoringFoldedPosition = 0;
 double scoringPinPosition = 600;
-double scoringPickupPosition = 1150;
+double scoringPickupPosition = 1225;
 double scoringAutoTolerance = 25;
 
 double previousLiftPosition = 0;

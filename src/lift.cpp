@@ -1,6 +1,8 @@
+
 #include "lift.h"
 #include "main.h"
 #include <algorithm>
+#include <atomic>
 
 pros::Motor liftMotor1(10);
 pros::Motor liftMotor2(-16);
@@ -23,9 +25,23 @@ int liftFinalSpeed = 18;
 bool matchLoadMoving = false;
 double matchLoadTarget = 0;
 
+// Async lift settings
+std::atomic<bool> liftAsyncMoving(false);
+std::atomic<double> liftAsyncTarget(0);
+std::atomic<unsigned int> liftAsyncStart(0);
+
 void liftStop() {
     liftMotor1.move(0);
     liftMotor2.move(0);
+}
+
+void cancelLiftAsync() {
+    liftAsyncMoving = false;
+    liftStop();
+}
+
+bool isLiftAsyncMoving() {
+    return liftAsyncMoving.load();
 }
 
 void liftSetup() {
@@ -36,7 +52,26 @@ void liftSetup() {
     liftMotor2.tare_position();
 
     matchLoadMoving = false;
+    liftAsyncMoving = false;
     liftStop();
+
+    // Run the async lift controller in the background
+    static pros::Task liftTask([] {
+        while (true) {
+            if (liftAsyncMoving.load()) {
+                double target = liftAsyncTarget.load();
+                unsigned int start = liftAsyncStart.load();
+
+                if (moveLiftToPosition(target) ||
+                    pros::millis() - start >= 3000) {
+                    liftAsyncMoving = false;
+                    liftStop();
+                }
+            }
+
+            pros::delay(20);
+        }
+    });
 }
 
 double getLiftPosition() {
@@ -44,7 +79,10 @@ double getLiftPosition() {
 }
 
 double getLiftTemperature() {
-    return std::max(liftMotor1.get_temperature(), liftMotor2.get_temperature());
+    return std::max(
+        liftMotor1.get_temperature(),
+        liftMotor2.get_temperature()
+    );
 }
 
 double getNormalLiftPosition() {
@@ -76,6 +114,7 @@ int getLiftDownSpeed(double distance) {
 }
 
 void liftUp() {
+    cancelLiftAsync();
     cancelMatchLoad();
 
     liftMotor1.move(liftSpeed);
@@ -83,6 +122,7 @@ void liftUp() {
 }
 
 void liftDown() {
+    cancelLiftAsync();
     cancelMatchLoad();
 
     double distance = getLiftPosition() - normalLiftPosition;
@@ -131,8 +171,11 @@ bool moveLiftToPosition(double targetPosition) {
     return true;
 }
 
-// Move lift to a position and wait until finished
+// Move lift and wait until it finishes
 void liftToPosition(double targetPosition) {
+    cancelLiftAsync();
+    cancelMatchLoad();
+
     unsigned int start = pros::millis();
 
     while (pros::millis() - start < 3000) {
@@ -146,7 +189,18 @@ void liftToPosition(double targetPosition) {
     liftStop();
 }
 
+// Start moving lift without waiting
+void liftToPositionAsync(double targetPosition) {
+    cancelMatchLoad();
+
+    liftAsyncTarget = targetPosition;
+    liftAsyncStart = pros::millis();
+    liftAsyncMoving = true;
+}
+
 void toggleMatchLoad() {
+    cancelLiftAsync();
+
     double currentPosition = getLiftPosition();
 
     if (currentPosition >= normalLiftPosition - liftPositionTolerance) {
