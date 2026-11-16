@@ -79,13 +79,15 @@ void competitionDriver() {
     chassis.arcade(curvedThrottle, curvedSteer, true);
 
     // Ansh lift controls
+    // R1 moves cascade up
+    // L1 moves cascade down
     if (!isScoringMacroRunning()) {
         if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)) {
             toggleMatchLoad();
-        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
+        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
             cancelMatchLoad();
             liftUp();
-        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
+        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
             cancelMatchLoad();
 
             if (getLiftPosition() > getNormalLiftPosition()) {
@@ -117,11 +119,13 @@ void competitionDriver() {
     }
 
     // Ansh scoring mechanism controls
+    // X moves claw up
+    // A moves claw down
     if (!isScoringMacroRunning()) {
-        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
+        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
             syncScoringAuto();
             scoringMechUp();
-        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
+        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
             syncScoringAuto();
             scoringMechDown();
         } else {
