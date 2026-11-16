@@ -14,7 +14,7 @@ liftToPositionAsync(1650,1100);
 
 scoringTo90(500);
 
-chassis.moveToPose(46, 22.5, 180, 1800, {.forwards = false, .lead = 0.131, .maxSpeed = 127, .minSpeed = 0}, false);
+chassis.moveToPose(46, 22.5, 180, 1600, {.forwards = false, .lead = 0.131, .maxSpeed = 127, .minSpeed = 0}, false);
 liftToPosition(100, 1300);
 scoringWheelsReject();
 
@@ -34,7 +34,7 @@ scoringWheelsStop();
 scoringTo90(500);
 
 liftToPositionAsync(2800, 1100);
-chassis.moveToPose(46.5, 24.25, 270, 1800, {.forwards = false, .lead = 0, .maxSpeed = 127, .minSpeed = 80}, false);
+chassis.moveToPose(46.5, 24.25, 270, 1600, {.forwards = false, .lead = 0, .maxSpeed = 127, .minSpeed = 80}, false);
 liftToPosition(2000);
 scoringWheelsReject();
 
@@ -60,7 +60,7 @@ scoringTo90(500);
 
 liftToPositionAsync(3800,1450);
 
-chassis.moveToPose(45.5, 19.5, 0, 2000, {.forwards = false, .lead = 0.558, .maxSpeed = 60, .minSpeed = 40}, false);
+chassis.moveToPose(45.5, 19.5, 0, 1850, {.forwards = false, .lead = 0.558, .maxSpeed = 60, .minSpeed = 40}, false);
 liftToPosition(3000, 1500);
 scoringWheelsReject();
 
