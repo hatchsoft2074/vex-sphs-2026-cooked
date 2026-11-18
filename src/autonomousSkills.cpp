@@ -63,8 +63,10 @@ pros::delay(250);
 scoringWheelsStop();
 
 liftToPosition(3950, 1100);
-chassis.moveToPoint(46, 37.5, 1000, {.forwards = true, .maxSpeed = 127, .minSpeed = 40}, false);
-chassis.turnToHeading(80, 1500, {.maxSpeed = 60, .minSpeed = 0}, false);
+chassis.moveToPoint(43.5, 43, 1000, {.forwards = true, .maxSpeed = 127, .minSpeed = 40}, false);
+chassis.turnToHeading(0, 1500, {.maxSpeed = 60, .minSpeed = 0}, false);
 liftToPosition(getNormalLiftPosition());
 scoringFold(500);
+chassis.moveToPose(8, 5, 230, 4000, {.forwards = false, .lead = 0.468, .maxSpeed = 127, .minSpeed = 0}, false);
+chassis.turnToHeading(230, 2000, {.maxSpeed = 127, .minSpeed = 0}, false);
 }
