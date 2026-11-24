@@ -4,15 +4,15 @@
 #include <algorithm>
 #include <atomic>
 
-// New cascade motors
-// Left top: 18
-// Left bottom: 17
-// Right: 9
+// Cascade winch motors
+// Left: 21
+// Top right: 15
+// Bottom right: 19
 // Check motor directions before using the lift.
 
-pros::Motor liftMotor1(18);
-pros::Motor liftMotor2(17);
-pros::Motor liftMotor3(-9);
+pros::Motor liftMotor1(21);
+pros::Motor liftMotor2(-15);
+pros::Motor liftMotor3(-19);
 
 int liftSpeed = 127;
 

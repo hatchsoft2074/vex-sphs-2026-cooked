@@ -2,13 +2,13 @@
 #include "main.h"
 #include "robotConfigs.h"
 
-// The claw is at the front of the robot.
-// Left front 20, left back 19.
-// Right front 21, right back 10.
+// Motor positions are relative to the brain.
+// Left front 20, left back 18.
+// Right front 9, right back 2.
 // Check motor directions before driving.
 
-pros::MotorGroup left_motor_group({20, 19}, pros::MotorGears::blue);
-pros::MotorGroup right_motor_group({-21, -10}, pros::MotorGears::blue);
+pros::MotorGroup left_motor_group({20, 18}, pros::MotorGears::blue);
+pros::MotorGroup right_motor_group({-9, -2}, pros::MotorGears::blue);
 
 // Drivetrain settings
 lemlib::Drivetrain drivetrain(
@@ -20,15 +20,23 @@ lemlib::Drivetrain drivetrain(
     2
 );
 
-// IMU
-pros::Imu imu(14);
+// IMU on port 1
+pros::Imu imu(1);
 
-// Port 18 is now used by the cascade.
-// Horizontal tracking is disabled for now.
+// Horizontal tracking sensor on port 10
+pros::Rotation horizontal_encoder(10);
 
-// Vertical tracking sensor on port 13
-pros::Rotation vertical_encoder(-13);
+// Vertical tracking sensor on port 16
+pros::Rotation vertical_encoder(-16);
 
+// Horizontal tracking wheel
+lemlib::TrackingWheel horizontal_tracking_wheel(
+    &horizontal_encoder,
+    lemlib::Omniwheel::NEW_2,
+    0
+);
+
+// Vertical tracking wheel
 lemlib::TrackingWheel vertical_tracking_wheel(
     &vertical_encoder,
     lemlib::Omniwheel::NEW_2,
@@ -39,7 +47,7 @@ lemlib::TrackingWheel vertical_tracking_wheel(
 lemlib::OdomSensors sensors(
     &vertical_tracking_wheel,
     nullptr,
-    nullptr,
+    &horizontal_tracking_wheel,
     nullptr,
     &imu
 );

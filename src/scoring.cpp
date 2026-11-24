@@ -2,8 +2,8 @@
 #include "scoring.h"
 #include "main.h"
 
-// Ratchet claw motor on port 7
-pros::Motor scoringMotor(7);
+// Ratchet claw motor on port 14
+pros::Motor scoringMotor(14);
 
 int scoringSpeed = 127;
 
