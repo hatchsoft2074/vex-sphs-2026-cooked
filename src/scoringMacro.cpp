@@ -2,21 +2,29 @@
 #include "scoringMacro.h"
 #include "main.h"
 #include "lift.h"
-#include "scoring.h"
 
-// Old scoring macro is disabled
+// Cascade lowering macro
 bool scoringMacroEnabled = false;
 
 void startScoringMacro() {
-    // No action
+    // Stop previous automatic movement
+    cancelLiftAsync();
+    cancelMatchLoad();
+
+    // Start lowering to position 0
+    scoringMacroEnabled = true;
+    liftToPositionAsync(0, 5000);
 }
 
 void updateScoringMacro() {
-    // No action
+    // Stop tracking when movement finishes
+    if (scoringMacroEnabled && !isLiftAsyncMoving()) {
+        scoringMacroEnabled = false;
+    }
 }
 
 bool isScoringMacroRunning() {
-    return false;
+    return scoringMacroEnabled && isLiftAsyncMoving();
 }
 
 bool isScoringPositionActive() {

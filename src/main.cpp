@@ -3,6 +3,7 @@
 #include "robotConfigs.h"
 #include "opcontrol.h"
 #include "lift.h"
+#include "scoring.h"
 #include "autonomous.hpp"
 #include "mvlib/Optional/lemlib.hpp"
 #include "robodash/core.h"
@@ -101,7 +102,7 @@ bool practiceCancelHeld = false;
 bool autonConfirmed = false;
 std::string selectedAutonName = "Left Auton";
 
-// Stop the drivetrain and lift
+// Stop the drivetrain, cascade, and claw
 void stopPracticeAutonMotors() {
     chassis.cancelAllMotions();
     left_motor_group.move(0);
@@ -110,6 +111,7 @@ void stopPracticeAutonMotors() {
     cancelMatchLoad();
     cancelLiftAsync();
     liftStop();
+    scoringStop();
 }
 
 // Clean up a finished practice task
@@ -191,9 +193,10 @@ void updateScreenTask() {
             );
 
             double liftTemp = getLiftTemperature();
+            double clawTemp = getScoringTemperature();
 
             odomScreen.showWarning(
-                std::max(dtTemp, liftTemp) >= TEMP_BURNOUT
+                std::max({dtTemp, liftTemp, clawTemp}) >= TEMP_BURNOUT
             );
 
             std::snprintf(
@@ -217,10 +220,11 @@ void updateScreenTask() {
             );
             odomScreen.println(line);
 
+            // Show all three temperatures together
             std::snprintf(
                 line, sizeof(line),
-                "Temp - DT: %.0f Lift: %.0f",
-                dtTemp, liftTemp
+                "Temp - DT: %.0f Lift: %.0f Claw: %.0f",
+                dtTemp, liftTemp, clawTemp
             );
             odomScreen.println(line);
 
@@ -377,6 +381,23 @@ void setupWatches(mvlib::Logger& logger) {
     );
 
     logger.watch(
+        "Claw Temp",
+        LogLevel::INFO,
+        WatchMode::onInterval,
+        2_mvS,
+        []() { return getScoringTemperature(); },
+        mvlib::LevelOverride<double>{
+            .elevatedLevel = LogLevel::WARN,
+            .predicate = mvlib::asPredicate<double>(
+                [](const double& t) {
+                    return t > 50.0;
+                }
+            ),
+            .label = "Claw Temp HOT"
+        }
+    );
+
+    logger.watch(
         "Match Load Moving",
         LogLevel::INFO,
         WatchMode::onChange,
@@ -397,7 +418,9 @@ void setupWatches(mvlib::Logger& logger) {
         LogLevel::INFO,
         WatchMode::onChange,
         250_mvMs,
-        []() { return static_cast<int>(driverMode); }
+        []() {
+            return static_cast<int>(driverMode);
+        }
     );
 }
 
@@ -416,9 +439,7 @@ void initialize() {
     logger.start();
 
     liftSetup();
-
-    // Old intake and scoring motors are not initialized.
-    // Ratchet claw code will be added later.
+    scoringSetup();
 
     selectDriverMode();
 
@@ -437,6 +458,8 @@ void disabled() {
     if (practiceAutonRunning.load()) {
         cancelPracticeAuton();
     }
+
+    scoringStop();
 }
 
 void competition_initialize() {
@@ -448,8 +471,10 @@ void autonomous() {
     left_motor_group.move(0);
     right_motor_group.move(0);
 
+    cancelMatchLoad();
     cancelLiftAsync();
     liftStop();
+    scoringStop();
 }
 
 void opcontrol() {

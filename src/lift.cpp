@@ -8,7 +8,6 @@
 // Left: 21
 // Top right: 15
 // Bottom right: 19
-// Check motor directions before using the lift.
 
 pros::Motor liftMotor1(21);
 pros::Motor liftMotor2(-15);
@@ -16,28 +15,23 @@ pros::Motor liftMotor3(-19);
 
 int liftSpeed = 127;
 
+// Cascade positions
 double matchLoadPosition = 0;
-double normalLiftPosition = 1400;
-double maxLiftPosition = 4130;
+double normalLiftPosition = 0;
+double maxLiftPosition = 2400;
 
 double liftPositionTolerance = 20;
-double liftSlowdownStart = 600;
-double liftMediumDistance = 300;
-double liftFinalDistance = 100;
-
-int liftMediumSpeed = 50;
-int liftSlowSpeed = 25;
-int liftFinalSpeed = 18;
 
 bool matchLoadMoving = false;
 double matchLoadTarget = 0;
 
+// Async lift settings
 std::atomic<bool> liftAsyncMoving(false);
 std::atomic<double> liftAsyncTarget(0);
 std::atomic<unsigned int> liftAsyncStart(0);
 std::atomic<unsigned int> liftAsyncTimeout(3000);
 
-// Move all three lift motors together
+// Move all three winch motors together
 static void moveAllLiftMotors(int speed) {
     liftMotor1.move(speed);
     liftMotor2.move(speed);
@@ -62,6 +56,7 @@ void liftSetup() {
     liftMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
     liftMotor3.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
+    // Start with the cascade fully lowered
     liftMotor1.tare_position();
     liftMotor2.tare_position();
     liftMotor3.tare_position();
@@ -90,11 +85,12 @@ void liftSetup() {
     });
 }
 
-// Keep the old position offset for compatibility
+// Position 0 is fully lowered
 double getLiftPosition() {
-    return liftMotor1.get_position() + normalLiftPosition;
+    return liftMotor1.get_position();
 }
 
+// Return the hottest winch motor temperature
 double getLiftTemperature() {
     return std::max({
         liftMotor1.get_temperature(),
@@ -115,65 +111,49 @@ double getMaxLiftPosition() {
     return maxLiftPosition;
 }
 
-int getLiftDownSpeed(double distance) {
-    if (distance <= liftFinalDistance) {
-        return liftFinalSpeed;
-    }
-
-    if (distance <= liftMediumDistance) {
-        return liftSlowSpeed;
-    }
-
-    if (distance <= liftSlowdownStart) {
-        return liftMediumSpeed;
-    }
-
-    return liftSpeed;
-}
-
-// Manual lift up
+// Manual lift up at full speed
 void liftUp() {
     liftAsyncMoving = false;
     cancelMatchLoad();
-    moveAllLiftMotors(liftSpeed);
-}
 
-// Manual lift down
-void liftDown() {
-    liftAsyncMoving = false;
-    cancelMatchLoad();
-
-    double distance = getLiftPosition() - normalLiftPosition;
-
-    if (distance <= 0) {
+    if (getLiftPosition() >= maxLiftPosition) {
         liftStop();
         return;
     }
 
-    moveAllLiftMotors(-getLiftDownSpeed(distance));
+    moveAllLiftMotors(liftSpeed);
 }
 
-// Move toward a target position
+// Manual lift down at full speed
+void liftDown() {
+    liftAsyncMoving = false;
+    cancelMatchLoad();
+
+    if (getLiftPosition() <= 0) {
+        liftStop();
+        return;
+    }
+
+    moveAllLiftMotors(-liftSpeed);
+}
+
+// Move toward a target at full speed
 bool moveLiftToPosition(double targetPosition) {
+    targetPosition = std::clamp(
+        targetPosition,
+        0.0,
+        maxLiftPosition
+    );
+
     double error = targetPosition - getLiftPosition();
 
     if (error > liftPositionTolerance) {
-        int speed = liftSpeed;
-
-        if (error <= liftFinalDistance) {
-            speed = liftFinalSpeed;
-        } else if (error <= liftMediumDistance) {
-            speed = liftSlowSpeed;
-        } else if (error <= liftSlowdownStart) {
-            speed = liftMediumSpeed;
-        }
-
-        moveAllLiftMotors(speed);
+        moveAllLiftMotors(liftSpeed);
         return false;
     }
 
     if (error < -liftPositionTolerance) {
-        moveAllLiftMotors(-getLiftDownSpeed(-error));
+        moveAllLiftMotors(-liftSpeed);
         return false;
     }
 
@@ -181,7 +161,7 @@ bool moveLiftToPosition(double targetPosition) {
     return true;
 }
 
-// Move lift and wait
+// Move lift and wait until it finishes
 void liftToPosition(double targetPosition, int timeout) {
     cancelLiftAsync();
     cancelMatchLoad();
@@ -202,34 +182,37 @@ void liftToPosition(double targetPosition, int timeout) {
     liftStop();
 }
 
-// Start lift movement without waiting
+// Start moving lift without waiting
 void liftToPositionAsync(double targetPosition, int timeout) {
     cancelMatchLoad();
 
     liftAsyncMoving = false;
-    liftAsyncTarget = targetPosition;
+    liftAsyncTarget = std::clamp(
+        targetPosition,
+        0.0,
+        maxLiftPosition
+    );
     liftAsyncTimeout =
         static_cast<unsigned int>(std::max(0, timeout));
     liftAsyncStart = pros::millis();
     liftAsyncMoving = true;
 }
 
+// Match-load button lowers the cascade to 0
 void toggleMatchLoad() {
     cancelLiftAsync();
 
-    double currentPosition = getLiftPosition();
-
-    matchLoadTarget =
-        currentPosition >= normalLiftPosition - liftPositionTolerance
-        ? matchLoadPosition
-        : normalLiftPosition;
-
+    matchLoadTarget = 0;
     matchLoadMoving = true;
 }
 
+// Update the lowering macro
 void updateMatchLoad() {
-    if (matchLoadMoving &&
-        moveLiftToPosition(matchLoadTarget)) {
+    if (!matchLoadMoving) {
+        return;
+    }
+
+    if (moveLiftToPosition(matchLoadTarget)) {
         matchLoadMoving = false;
     }
 }
