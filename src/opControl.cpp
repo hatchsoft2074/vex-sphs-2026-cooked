@@ -64,7 +64,7 @@ void drive(double steerExpo, double throttleExpo) {
 
     // Negative steering fixes reversed turning
     chassis.arcade(
-        throttleCurve.curve(leftY),
+        -throttleCurve.curve(leftY),
         -steerCurve.curve(rightX),
         true
     );
