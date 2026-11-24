@@ -3,19 +3,18 @@
 #include "opcontrol.h"
 #include "robotConfigs.h"
 #include "lift.h"
-#include "intake.h"
 #include "scoring.h"
-#include "scoringMacro.h"
+#include <algorithm>
 
-// Driver Curve Settings
+// Driver curve settings
 lemlib::ExpoDriveCurve throttle_curve(3, 10, 1.019);
 lemlib::ExpoDriveCurve steer_curve(3, 10, 1.019);
 
-// Ansh
+// Ansh settings
 double anshSteerExpo = 1.019;
 double anshThrottleExpo = 1.019;
 
-// Eva
+// Eva settings
 double evaSteerExpo = 1.019;
 double evaThrottleExpo = 1.019;
 
@@ -24,10 +23,9 @@ pros::Controller controller(pros::E_CONTROLLER_MASTER);
 DriverMode driverMode = PRACTICE;
 bool practiceSkills = false;
 
+// Change driving sensitivity
 void updateDriverCurves(double &steerExpo, double &throttleExpo) {
-    bool yHeld = controller.get_digital(pros::E_CONTROLLER_DIGITAL_Y);
-
-    if (yHeld) {
+    if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_Y)) {
         if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT)) {
             steerExpo -= 0.001;
         }
@@ -45,261 +43,131 @@ void updateDriverCurves(double &steerExpo, double &throttleExpo) {
         }
     }
 
-    if (steerExpo < 1.000) {
-        steerExpo = 1.000;
-    }
-
-    if (throttleExpo < 1.000) {
-        throttleExpo = 1.000;
-    }
+    steerExpo = std::max(1.000, steerExpo);
+    throttleExpo = std::max(1.000, throttleExpo);
 
     controller.print(2, 0, "S:%.3f T:%.3f", steerExpo, throttleExpo);
 }
 
+// Drive the robot
+void drive(double steerExpo, double throttleExpo) {
+    int leftY = controller.get_analog(
+        pros::E_CONTROLLER_ANALOG_LEFT_Y
+    );
+
+    int rightX = controller.get_analog(
+        pros::E_CONTROLLER_ANALOG_RIGHT_X
+    );
+
+    lemlib::ExpoDriveCurve throttleCurve(3, 10, throttleExpo);
+    lemlib::ExpoDriveCurve steerCurve(3, 10, steerExpo);
+
+    // Negative steering fixes reversed turning
+    chassis.arcade(
+        throttleCurve.curve(leftY),
+        -steerCurve.curve(rightX),
+        true
+    );
+}
+
+// Ansh competition controls
 void competitionDriver() {
     updateDriverCurves(anshSteerExpo, anshThrottleExpo);
+    drive(anshSteerExpo, anshThrottleExpo);
 
-    bool yHeld = controller.get_digital(pros::E_CONTROLLER_DIGITAL_Y);
-
-    if (!yHeld &&
-        controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN)) {
-        startScoringMacro();
+    // Cascade controls
+    if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)) {
+        toggleMatchLoad();
+    }
+    else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
+        liftUp();
+    }
+    else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
+        liftDown();
+    }
+    else if (!isMatchLoadMoving()) {
+        liftStop();
     }
 
-    int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-    int rightX = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+    updateMatchLoad();
 
-    lemlib::ExpoDriveCurve throttleCurve(3, 10, anshThrottleExpo);
-    lemlib::ExpoDriveCurve steerCurve(3, 10, anshSteerExpo);
-
-    int curvedThrottle = throttleCurve.curve(leftY);
-    int curvedSteer = steerCurve.curve(rightX);
-
-    // Driving works while the macro runs
-    chassis.arcade(curvedThrottle, curvedSteer, true);
-
-    // Ansh lift controls
-    // R1 moves cascade up
-    // L1 moves cascade down
-    if (!isScoringMacroRunning()) {
-        if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)) {
-            toggleMatchLoad();
-        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
-            cancelMatchLoad();
-            liftUp();
-        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
-            cancelMatchLoad();
-
-            if (getLiftPosition() > getNormalLiftPosition()) {
-                liftDown();
-            } else {
-                liftStop();
-            }
-        } else if (!isMatchLoadMoving()) {
-            liftStop();
-        }
-
-        updateMatchLoad();
+    // Ratchet claw controls
+    // R2 closes the claw
+    // L2 opens the claw
+    if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
+        scoringClose();
     }
-
-    // Ansh intake controls
-    bool intakeAcceptHeld =
-        controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
-
-    bool intakeRejectHeld =
-        !intakeAcceptHeld &&
-        controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
-
-    if (intakeAcceptHeld) {
-        intakeAccept();
-    } else if (intakeRejectHeld) {
-        intakeReject();
-    } else {
-        intakeStop();
+    else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
+        scoringOpen();
     }
-
-    // Ansh scoring mechanism controls
-    // X moves claw up
-    // A moves claw down
-    if (!isScoringMacroRunning()) {
-        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
-            syncScoringAuto();
-            scoringMechUp();
-        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
-            syncScoringAuto();
-            scoringMechDown();
-        } else {
-            // Match load movement does not automatically fold the claw
-            if (isMatchLoadMoving()) {
-                syncScoringAuto();
-                scoringMechStop();
-            } else if (!updateScoringAuto()) {
-                scoringMechStop();
-            }
-        }
+    else {
+        scoringStop();
     }
-
-    // Ansh scoring wheels
-    // These still work while the macro runs
-    if (intakeAcceptHeld || intakeRejectHeld) {
-        scoringWheelsAccept();
-    } else if (isScoringAutoMovingUp()) {
-        scoringWheelsAccept();
-    } else if (!yHeld) {
-        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
-            scoringWheelsAccept();
-        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) {
-            scoringWheelsReject();
-        } else {
-            scoringWheelsStop();
-        }
-    } else {
-        scoringWheelsStop();
-    }
-
-    updateScoringMacro();
-
-    printf(
-        "Lift: %.2f | Intake: %.2f | Scoring: %.2f | Macro: %d\n",
-        getLiftPosition(),
-        getNormalLiftPosition(),
-        getScoringMechPosition(),
-        isScoringMacroRunning()
-    );
 
     pros::delay(25);
 }
 
+// Eva skills controls
 void skillsDriver() {
     updateDriverCurves(evaSteerExpo, evaThrottleExpo);
+    drive(evaSteerExpo, evaThrottleExpo);
 
-    bool yHeld = controller.get_digital(pros::E_CONTROLLER_DIGITAL_Y);
-
-    if (!yHeld &&
-        controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN)) {
-        startScoringMacro();
+    // Cascade controls
+    if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A)) {
+        toggleMatchLoad();
+    }
+    else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
+        liftUp();
+    }
+    else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
+        liftDown();
+    }
+    else if (!isMatchLoadMoving()) {
+        liftStop();
     }
 
-    int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-    int rightX = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+    updateMatchLoad();
 
-    lemlib::ExpoDriveCurve throttleCurve(3, 10, evaThrottleExpo);
-    lemlib::ExpoDriveCurve steerCurve(3, 10, evaSteerExpo);
-
-    int curvedThrottle = throttleCurve.curve(leftY);
-    int curvedSteer = steerCurve.curve(rightX);
-
-    // Driving works while the macro runs
-    chassis.arcade(curvedThrottle, curvedSteer, true);
-
-    // Eva lift controls
-    if (!isScoringMacroRunning()) {
-        if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A)) {
-            toggleMatchLoad();
-        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
-            cancelMatchLoad();
-            liftUp();
-        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
-            cancelMatchLoad();
-
-            if (getLiftPosition() > getNormalLiftPosition()) {
-                liftDown();
-            } else {
-                liftStop();
-            }
-        } else if (!isMatchLoadMoving()) {
-            liftStop();
-        }
-
-        updateMatchLoad();
+    // Ratchet claw controls
+    // R1 closes the claw
+    // R2 opens the claw
+    if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
+        scoringClose();
     }
-
-    // Eva intake controls
-    bool intakeAcceptHeld =
-        controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
-
-    bool intakeRejectHeld =
-        !intakeAcceptHeld &&
-        controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
-
-    if (intakeAcceptHeld) {
-        intakeAccept();
-    } else if (intakeRejectHeld) {
-        intakeReject();
-    } else {
-        intakeStop();
+    else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
+        scoringOpen();
     }
-
-    // Eva scoring mechanism controls
-    if (!isScoringMacroRunning()) {
-        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
-            syncScoringAuto();
-            scoringMechUp();
-        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
-            syncScoringAuto();
-            scoringMechDown();
-        } else {
-            // Match load movement does not automatically fold the claw
-            if (isMatchLoadMoving()) {
-                syncScoringAuto();
-                scoringMechStop();
-            } else if (!updateScoringAuto()) {
-                scoringMechStop();
-            }
-        }
+    else {
+        scoringStop();
     }
-
-    // Eva scoring wheels
-    // These still work while the macro runs
-    if (intakeAcceptHeld || intakeRejectHeld) {
-        scoringWheelsAccept();
-    } else if (isScoringAutoMovingUp()) {
-        scoringWheelsAccept();
-    } else if (!yHeld) {
-        if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
-            changeScoringDirection();
-        }
-
-        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)) {
-            scoringWheels();
-        } else {
-            scoringWheelsStop();
-        }
-    } else {
-        scoringWheelsStop();
-    }
-
-    updateScoringMacro();
-
-    printf(
-        "Lift: %.2f | Intake: %.2f | Scoring: %.2f | Macro: %d\n",
-        getLiftPosition(),
-        getNormalLiftPosition(),
-        getScoringMechPosition(),
-        isScoringMacroRunning()
-    );
 
     pros::delay(25);
 }
 
+// Practice mode
 void practiceDriver() {
+    // X + A selects Ansh controls
     if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X) &&
         controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A)) {
+
         practiceSkills = false;
         controller.rumble(".-");
         pros::delay(500);
     }
 
+    // X + B selects Eva controls
     if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X) &&
         controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)) {
+
         practiceSkills = true;
         controller.rumble("-...");
         pros::delay(500);
     }
 
-    if (!practiceSkills) {
-        competitionDriver();
-    } else {
+    if (practiceSkills) {
         skillsDriver();
+    }
+    else {
+        competitionDriver();
     }
 }

@@ -1,238 +1,33 @@
+
 #include "scoring.h"
 #include "main.h"
-#include <algorithm>
-#include "lift.h"
 
-// Scoring motors
-pros::Motor scoringMech(8);
-pros::Motor scoringWheelMotor(9);
+// Ratchet claw motor on port 7
+pros::Motor scoringMotor(7);
 
-int scoringMechSpeed = 70;
-int scoringWheelsSpeed = 127;
-
-// Automatic scoring settings
-double scoringAutoUpHeight = 1850;
-double scoringAutoDownHeight = 1400;
-double scoring90Position = 850;
-double scoringFoldedPosition = 0;
-double scoringPinPosition = 600;
-double scoringPickupPosition = 1225;
-double scoringAutoTolerance = 25;
-
-double previousLiftPosition = 0;
-bool scoringAutoMovingUp = false;
-bool scoringAutoMovingDown = false;
-bool scoringDirection = true;
+int scoringSpeed = 127;
 
 void scoringSetup() {
-scoringMech.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-scoringMech.tare_position();
-previousLiftPosition = getLiftPosition();
+    scoringMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    scoringMotor.move(0);
 }
 
-void scoringMechUp() {
-scoringMech.move(scoringMechSpeed);
+// Close the ratchet claw
+void scoringClose() {
+    scoringMotor.move(scoringSpeed);
 }
 
-void scoringMechDown() {
-scoringMech.move(-scoringMechSpeed);
+// Open the ratchet claw
+void scoringOpen() {
+    scoringMotor.move(-scoringSpeed);
 }
 
-void scoringMechStop() {
-scoringMech.move(0);
+// Stop the ratchet claw
+void scoringStop() {
+    scoringMotor.move(0);
 }
 
-void scoringWheels() {
-scoringWheelMotor.move(
-scoringDirection ? -scoringWheelsSpeed : scoringWheelsSpeed
-);
-}
-
-void scoringWheelsAccept() {
-scoringWheelMotor.move(-scoringWheelsSpeed);
-}
-
-void scoringWheelsReject() {
-scoringWheelMotor.move(scoringWheelsSpeed);
-}
-
-void scoringWheelsStop() {
-scoringWheelMotor.move(0);
-}
-
-void changeScoringDirection() {
-scoringDirection = !scoringDirection;
-}
-
-void checkScoringAutoTrigger() {
-double currentLiftPosition = getLiftPosition();
-
-if (previousLiftPosition < scoringAutoUpHeight &&
-currentLiftPosition >= scoringAutoUpHeight) {
-scoringAutoMovingUp = true;
-scoringAutoMovingDown = false;
-}
-
-if (previousLiftPosition > scoringAutoDownHeight &&
-currentLiftPosition <= scoringAutoDownHeight) {
-scoringAutoMovingUp = false;
-scoringAutoMovingDown = true;
-}
-
-previousLiftPosition = currentLiftPosition;
-}
-
-bool updateScoringAuto() {
-checkScoringAutoTrigger();
-
-if (scoringAutoMovingUp) {
-if (getScoringMechPosition() <
-scoring90Position - scoringAutoTolerance) {
-scoringMechUp();
-return true;
-}
-
-scoringMechStop();
-scoringAutoMovingUp = false;
-return false;
-}
-
-if (scoringAutoMovingDown) {
-if (getScoringMechPosition() >
-scoringFoldedPosition + scoringAutoTolerance) {
-scoringMechDown();
-return true;
-}
-
-scoringMechStop();
-scoringAutoMovingDown = false;
-return false;
-}
-
-return false;
-}
-
-void cancelScoringAuto() {
-scoringAutoMovingUp = false;
-scoringAutoMovingDown = false;
-}
-
-void syncScoringAuto() {
-previousLiftPosition = getLiftPosition();
-scoringAutoMovingUp = false;
-scoringAutoMovingDown = false;
-}
-
-bool isScoringAutoMovingUp() {
-return scoringAutoMovingUp;
-}
-
-bool isScoringAutoRunning() {
-return scoringAutoMovingUp || scoringAutoMovingDown;
-}
-
-double getScoringMechPosition() {
-return scoringMech.get_position();
-}
-
+// Get the claw motor temperature
 double getScoringTemperature() {
-return std::max(
-scoringMech.get_temperature(),
-scoringWheelMotor.get_temperature()
-);
-}
-
-void resetScoringMechPosition() {
-scoringMech.tare_position();
-}
-
-// Move claw to the 90 degree position
-void scoringTo90(int timeout) {
-cancelScoringAuto();
-
-unsigned int start = pros::millis();
-
-while (pros::millis() - start < timeout) {
-if (getScoringMechPosition() >=
-scoring90Position - scoringAutoTolerance) {
-break;
-}
-
-scoringMechUp();
-pros::delay(20);
-}
-
-scoringMechStop();
-}
-
-// Fold claw back to its starting position
-void scoringFold(int timeout) {
-cancelScoringAuto();
-
-unsigned int start = pros::millis();
-
-while (pros::millis() - start < timeout) {
-if (getScoringMechPosition() <=
-scoringFoldedPosition + scoringAutoTolerance) {
-break;
-}
-
-scoringMechDown();
-pros::delay(20);
-}
-
-scoringMechStop();
-}
-
-// Move claw to position 600 for picking up pins
-void scoringToPin(int timeout) {
-cancelScoringAuto();
-
-unsigned int start = pros::millis();
-
-while (pros::millis() - start < timeout) {
-double currentPosition = getScoringMechPosition();
-
-if (currentPosition < scoringPinPosition - scoringAutoTolerance) {
-scoringMechUp();
-} else if (currentPosition > scoringPinPosition + scoringAutoTolerance) {
-scoringMechDown();
-} else {
-break;
-}
-
-pros::delay(20);
-}
-
-scoringMechStop();
-}
-
-// Move claw to the pickup position
-void scoringToPickup(int timeout) {
-cancelScoringAuto();
-
-unsigned int start = pros::millis();
-
-while (pros::millis() - start < timeout) {
-double currentPosition = getScoringMechPosition();
-
-if (currentPosition < scoringPickupPosition - scoringAutoTolerance) {
-scoringMechUp();
-} else if (currentPosition > scoringPickupPosition + scoringAutoTolerance) {
-scoringMechDown();
-} else {
-break;
-}
-
-pros::delay(20);
-}
-
-scoringMechStop();
-}
-
-// Run scoring wheels in reject direction for a set time
-void scoringRejectFor(int milliseconds) {
-scoringWheelsReject();
-pros::delay(milliseconds);
-scoringWheelsStop();
+    return scoringMotor.get_temperature();
 }

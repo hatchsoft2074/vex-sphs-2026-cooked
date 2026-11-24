@@ -1,12 +1,10 @@
+
 #ifndef _PROS_OP_CONTROL_H_
 #define _PROS_OP_CONTROL_H_
+
 #include "main.h"
 #include "lemlib/api.hpp"
 
-#pragma once
-
-
-// Driver profiles
 void competitionDriver();
 void skillsDriver();
 void practiceDriver();

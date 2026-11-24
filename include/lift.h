@@ -1,3 +1,4 @@
+
 #pragma once
 
 void liftSetup();
@@ -15,7 +16,6 @@ double getMaxLiftPosition();
 
 bool moveLiftToPosition(double targetPosition);
 
-// Lift position controls with adjustable timeouts
 void liftToPosition(double targetPosition, int timeout = 3000);
 void liftToPositionAsync(double targetPosition, int timeout = 3000);
 
