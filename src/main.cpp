@@ -4,6 +4,7 @@
 #include "opcontrol.h"
 #include "lift.h"
 #include "scoring.h"
+#include "toggles.h"
 #include "autonomous.hpp"
 #include "mvlib/Optional/lemlib.hpp"
 #include "robodash/core.h"
@@ -102,7 +103,7 @@ bool practiceCancelHeld = false;
 bool autonConfirmed = false;
 std::string selectedAutonName = "Left Auton";
 
-// Stop the drivetrain, cascade, and claw
+// Stop the drivetrain, cascade, claw, and toggles
 void stopPracticeAutonMotors() {
     chassis.cancelAllMotions();
     left_motor_group.move(0);
@@ -112,6 +113,7 @@ void stopPracticeAutonMotors() {
     cancelLiftAsync();
     liftStop();
     scoringStop();
+    togglesStop();
 }
 
 // Clean up a finished practice task
@@ -194,9 +196,15 @@ void updateScreenTask() {
 
             double liftTemp = getLiftTemperature();
             double clawTemp = getScoringTemperature();
+            double togglesTemp = getTogglesTemperature();
 
             odomScreen.showWarning(
-                std::max({dtTemp, liftTemp, clawTemp}) >= TEMP_BURNOUT
+                std::max({
+                    dtTemp,
+                    liftTemp,
+                    clawTemp,
+                    togglesTemp
+                }) >= TEMP_BURNOUT
             );
 
             std::snprintf(
@@ -220,11 +228,11 @@ void updateScreenTask() {
             );
             odomScreen.println(line);
 
-            // Show all three temperatures together
+            // Show all four temperatures together
             std::snprintf(
                 line, sizeof(line),
-                "Temp - DT: %.0f Lift: %.0f Claw: %.0f",
-                dtTemp, liftTemp, clawTemp
+                "Temp - DT: %.0f Lift: %.0f Claw: %.0f Tog: %.0f",
+                dtTemp, liftTemp, clawTemp, togglesTemp
             );
             odomScreen.println(line);
 
@@ -398,6 +406,23 @@ void setupWatches(mvlib::Logger& logger) {
     );
 
     logger.watch(
+        "Toggles Temp",
+        LogLevel::INFO,
+        WatchMode::onInterval,
+        2_mvS,
+        []() { return getTogglesTemperature(); },
+        mvlib::LevelOverride<double>{
+            .elevatedLevel = LogLevel::WARN,
+            .predicate = mvlib::asPredicate<double>(
+                [](const double& t) {
+                    return t > 50.0;
+                }
+            ),
+            .label = "Toggles Temp HOT"
+        }
+    );
+
+    logger.watch(
         "Match Load Moving",
         LogLevel::INFO,
         WatchMode::onChange,
@@ -440,6 +465,7 @@ void initialize() {
 
     liftSetup();
     scoringSetup();
+    togglesSetup();
 
     selectDriverMode();
 
@@ -460,6 +486,7 @@ void disabled() {
     }
 
     scoringStop();
+    togglesStop();
 }
 
 void competition_initialize() {
@@ -475,6 +502,7 @@ void autonomous() {
     cancelLiftAsync();
     liftStop();
     scoringStop();
+    togglesStop();
 }
 
 void opcontrol() {

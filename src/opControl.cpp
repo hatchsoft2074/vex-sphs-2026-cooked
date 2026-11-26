@@ -5,6 +5,7 @@
 #include "lift.h"
 #include "scoring.h"
 #include "scoringMacro.h"
+#include "toggles.h"
 #include <algorithm>
 
 lemlib::ExpoDriveCurve throttle_curve(3, 10, 1.019);
@@ -66,12 +67,41 @@ void updateCascadeMacroButton() {
     updateScoringMacro();
 }
 
+// Hold B to spin the toggles
+void updateToggles() {
+    static bool waitForRelease = false;
+
+    bool bHeld = controller.get_digital(
+        pros::E_CONTROLLER_DIGITAL_B
+    );
+
+    bool xHeld = controller.get_digital(
+        pros::E_CONTROLLER_DIGITAL_X
+    );
+
+    // Prevent movement when switching practice drivers
+    if (driverMode == PRACTICE && xHeld && bHeld) {
+        waitForRelease = true;
+    }
+
+    if (!bHeld) {
+        waitForRelease = false;
+    }
+
+    if (bHeld && !waitForRelease) {
+        togglesSpin();
+    } else {
+        togglesStop();
+    }
+}
+
 // Ansh competition controls
 void competitionDriver() {
     updateDriverCurves(anshSteerExpo, anshThrottleExpo);
     drive(anshSteerExpo, anshThrottleExpo);
 
     updateCascadeMacroButton();
+    updateToggles();
 
     if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
         liftUp();
@@ -103,6 +133,7 @@ void skillsDriver() {
     drive(evaSteerExpo, evaThrottleExpo);
 
     updateCascadeMacroButton();
+    updateToggles();
 
     if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
         liftUp();
@@ -132,6 +163,7 @@ void skillsDriver() {
 void practiceDriver() {
     if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X) &&
         controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A)) {
+        togglesStop();
         practiceSkills = false;
         controller.rumble(".-");
         pros::delay(500);
@@ -139,6 +171,8 @@ void practiceDriver() {
 
     if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X) &&
         controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)) {
+        updateToggles();
+        togglesStop();
         practiceSkills = true;
         controller.rumble("-...");
         pros::delay(500);
