@@ -3,7 +3,7 @@
 #include "toggles.h"
 
 // Active toggle motor
-pros::Motor togglesMotor(13);
+pros::Motor togglesMotor(-13);
 
 // Toggle motor speed
 int togglesSpeed = 127;
