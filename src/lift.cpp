@@ -18,7 +18,7 @@ int liftSpeed = 127;
 // Cascade positions
 double matchLoadPosition = 0;
 double normalLiftPosition = 0;
-double maxLiftPosition = 2400;
+double maxLiftPosition = 2690;
 
 double liftPositionTolerance = 20;
 
