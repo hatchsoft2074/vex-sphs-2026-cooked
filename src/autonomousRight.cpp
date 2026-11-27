@@ -7,8 +7,6 @@
 #include "scoringMacro.h"
 
 void AutonCompRight() {
- // set position to x:0, y:0, heading:0
-    chassis.setPose(0, 0, 0);
-    // turn to face heading 90 with a very long timeout
-    chassis.moveToPoint(0, 10, 0, 10000);
+chassis.setPose(0, 0, 0);
+chassis.moveToPoint(0, 10, 4000, {.forwards = true, .maxSpeed = 127, .minSpeed = 0}, false);
 }

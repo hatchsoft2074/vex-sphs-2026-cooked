@@ -51,7 +51,7 @@ void drive(double steerExpo, double throttleExpo) {
 
     // Reverse forward and steering
     chassis.arcade(
-        -throttleCurve.curve(leftY),
+        throttleCurve.curve(leftY),
         -steerCurve.curve(rightX),
         true
     );
