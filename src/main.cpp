@@ -492,17 +492,18 @@ void disabled() {
 void competition_initialize() {
 }
 
-// Autonomous is disabled until the new robot is ready
+// Run the selected autonomous
 void autonomous() {
-    chassis.cancelAllMotions();
-    left_motor_group.move(0);
-    right_motor_group.move(0);
+if (selectedAutonName == "Left Auton") {
+AutonCompLeft();
+} else if (selectedAutonName == "Right Auton") {
+AutonCompRight();
+} else if (selectedAutonName == "Skills Auton") {
+AutonSkills();
+}
 
-    cancelMatchLoad();
-    cancelLiftAsync();
-    liftStop();
-    scoringStop();
-    togglesStop();
+// Stop all motors when autonomous finishes
+stopPracticeAutonMotors();
 }
 
 void opcontrol() {
