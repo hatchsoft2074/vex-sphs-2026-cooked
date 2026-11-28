@@ -44,7 +44,7 @@ enum class DeviceType {
 	none = 0, ///< No device is plugged into the port
 	motor = 2, ///< A motor is plugged into the port
 	rotation = 4, ///< A rotation sensor is plugged into the port
-	imu = 6, ///< An inertial sensor is plugged into the port
+	imu = 1, ///< An inertial sensor is plugged into the port
 	distance = 7, ///< A distance sensor is plugged into the port
 	radio = 8, ///< A radio is plugged into the port
 	vision = 11, ///< A vision sensor is plugged into the port

@@ -21,7 +21,7 @@ lemlib::Drivetrain drivetrain(
 );
 
 // IMU on port 1
-pros::Imu imu(1);
+pros::Imu imu(-1);
 
 // Horizontal tracking sensor on port 10
 pros::Rotation horizontal_encoder(10);
@@ -54,9 +54,9 @@ lemlib::OdomSensors sensors(
 
 // Lateral (forward/backward) PID controller
 lemlib::ControllerSettings lateral_controller(
-    20,  // proportional gain (kP)
+    13.5,  // proportional gain (kP)
     0,   // integral gain (kI)
-    3,   // derivative gain (kD)
+    36,   // derivative gain (kD)
     0,   // anti windup
     0,   // small error range, in inches
     0, // small error range timeout, in milliseconds
@@ -67,9 +67,9 @@ lemlib::ControllerSettings lateral_controller(
 
 // Angular (turning) PID controller
 lemlib::ControllerSettings angular_controller(
-    0,   // proportional gain (kP)
+    17.5,   // proportional gain (kP)
     0,   // integral gain (kI)
-    0,   // derivative gain (kD)
+    14,   // derivative gain (kD)
     0,   // anti windup
     0,   // small error range, in degrees
     0, // small error range timeout, in milliseconds

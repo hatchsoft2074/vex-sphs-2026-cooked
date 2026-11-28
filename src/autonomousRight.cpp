@@ -8,5 +8,5 @@
 
 void AutonCompRight() {
 chassis.setPose(0, 0, 0);
-chassis.moveToPoint(0, 10, 4000, {.forwards = true, .maxSpeed = 127, .minSpeed = 0}, false);
+chassis.turnToHeading(90, 99999, {.maxSpeed = 127, .minSpeed = 0}, false);
 }

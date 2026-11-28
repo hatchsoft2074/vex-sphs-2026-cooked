@@ -49,7 +49,7 @@ typedef enum v5_device_e {
 	E_DEVICE_NONE = 0, ///< No device is plugged into the port
 	E_DEVICE_MOTOR = 2, ///< A motor is plugged into the port
 	E_DEVICE_ROTATION = 4, ///< A rotation sensor is plugged into the port
-	E_DEVICE_IMU = 6, ///< An inertial sensor is plugged into the port
+	E_DEVICE_IMU = 1, ///< An inertial sensor is plugged into the port
 	E_DEVICE_DISTANCE = 7, ///< A distance sensor is plugged into the port
 	E_DEVICE_RADIO = 8, ///< A radio is plugged into the port
 	E_DEVICE_VISION = 11, ///< A vision sensor is plugged into the port
